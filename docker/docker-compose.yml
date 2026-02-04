@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gb-postgres
+    environment:
+      POSTGRES_USER: groupbus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-groupbus_dev}
+      POSTGRES_DB: groupbus
+    ports:
+      - "5432:5432"
+    volumes:
+      - gb-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U groupbus -d groupbus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: gb-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - gb-redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  gb-postgres-data:
+  gb-redis-data:

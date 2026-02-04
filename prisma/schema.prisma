@@ -1,0 +1,760 @@
+// ============================================================================
+// GroupBus SaaS - Prisma Schema
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum UserRole {
+  SUPERADMIN
+  ADMIN
+  CLIENT
+  SUPPLIER
+}
+
+enum OrganisationType {
+  SUPPLIER
+  CLIENT
+}
+
+enum EnquiryStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  SENT_TO_SUPPLIERS
+  QUOTES_RECEIVED
+  QUOTE_SENT
+  ACCEPTED
+  CANCELLED
+  EXPIRED
+}
+
+enum SupplierQuoteStatus {
+  REQUESTED
+  SUBMITTED
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum CustomerQuoteStatus {
+  DRAFT
+  MARKUP_APPLIED
+  SENT_TO_CUSTOMER
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  SUPPLIER_ASSIGNED
+  SUPPLIER_ACCEPTED
+  SUPPLIER_REJECTED
+  PRE_TRIP_READY
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum VehicleType {
+  MINIBUS
+  STANDARD_COACH
+  EXECUTIVE_COACH
+  DOUBLE_DECKER
+  MIDI_COACH
+  OTHER
+}
+
+enum TripType {
+  ONE_WAY
+  RETURN
+  MULTI_STOP
+}
+
+enum DocumentType {
+  INSURANCE
+  LICENSE
+  MOT
+  COMPLIANCE
+  JOB_SHEET
+  DRIVER_BRIEFING
+  ROUTE_NOTES
+  QUOTE_PDF
+  OTHER
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  BOTH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  READ
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum SurveyType {
+  CUSTOMER_POST_TRIP
+  SUPPLIER_POST_TRIP
+}
+
+enum AiTaskType {
+  EMAIL_PARSER
+  ENQUIRY_ANALYZER
+  SUPPLIER_SELECTOR
+  BID_EVALUATOR
+  MARKUP_CALCULATOR
+  QUOTE_CONTENT
+  JOB_DOCUMENTS
+  EMAIL_PERSONALIZER
+}
+
+enum AiActionTaken {
+  AUTO_EXECUTED
+  ESCALATED_TO_HUMAN
+  OVERRIDDEN
+}
+
+enum HumanReviewStatus {
+  PENDING
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum HumanReviewReason {
+  LOW_CONFIDENCE
+  AI_FAILURE
+  POLICY_ESCALATION
+  LOW_SUPPLIER_RATING
+  ANOMALOUS_PRICING
+}
+
+enum EnquirySource {
+  WEBSITE
+  EMAIL
+  PHONE
+  API
+}
+
+// ============================================================================
+// Models
+// ============================================================================
+
+model User {
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  email           String    @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  phone           String?
+  role            UserRole  @default(CLIENT)
+  isActive        Boolean   @default(true)
+  emailVerified   DateTime?
+  image           String?
+  organisationId  String?
+  deletedAt       DateTime?
+
+  organisation    Organisation?    @relation(fields: [organisationId], references: [id])
+  enquiries       Enquiry[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  surveyResponses SurveyResponse[]
+
+  @@index([email])
+  @@index([role])
+  @@index([organisationId])
+}
+
+model Organisation {
+  id                 String           @id @default(cuid())
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  name               String
+  type               OrganisationType
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  postcode           String?
+  country            String?
+  website            String?
+  vatNumber          String?
+  rating             Float            @default(0)
+  totalJobsCompleted Int              @default(0)
+  reliabilityScore   Float            @default(0)
+  isActive           Boolean          @default(true)
+  deletedAt          DateTime?
+
+  users              User[]
+  vehicles           Vehicle[]
+  driverProfiles     DriverProfile[]
+  supplierEnquiries  SupplierEnquiry[]
+  supplierQuotes     SupplierQuote[]
+  bookings           Booking[]
+  documents          Document[]
+
+  @@index([type])
+  @@index([rating])
+}
+
+model Vehicle {
+  id                 String      @id @default(cuid())
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  organisationId     String
+  type               VehicleType
+  registrationNumber String
+  make               String?
+  model              String?
+  capacity           Int
+  features           String[]
+  insuranceExpiry    DateTime?
+  motExpiry          DateTime?
+  isActive           Boolean     @default(true)
+
+  organisation       Organisation   @relation(fields: [organisationId], references: [id])
+  supplierQuotes     SupplierQuote[]
+  bookings           Booking[]
+
+  @@index([organisationId])
+  @@index([type])
+}
+
+model DriverProfile {
+  id                    String    @id @default(cuid())
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  organisationId        String
+  firstName             String
+  lastName              String
+  email                 String?
+  phone                 String?
+  licenseNumber         String?
+  licenseExpiry         DateTime?
+  cpcExpiry             DateTime?
+  tachographCardNumber  String?
+  tachographCardExpiry  DateTime?
+  isActive              Boolean   @default(true)
+
+  organisation          Organisation @relation(fields: [organisationId], references: [id])
+  bookings              Booking[]
+
+  @@index([organisationId])
+}
+
+model Enquiry {
+  id                   String        @id @default(cuid())
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  referenceNumber      String        @unique
+  source               EnquirySource @default(WEBSITE)
+  sourceEmailId        String?       @unique
+  status               EnquiryStatus @default(SUBMITTED)
+  customerId           String
+  pickupLocation       String
+  pickupLat            Float?
+  pickupLng            Float?
+  dropoffLocation      String?
+  dropoffLat           Float?
+  dropoffLng           Float?
+  tripType             TripType      @default(ONE_WAY)
+  departureDate        DateTime
+  departureTime        String?
+  returnDate           DateTime?
+  returnTime           String?
+  passengerCount       Int
+  vehicleType          VehicleType?
+  specialRequirements  String[]
+  budgetMin            Float?
+  budgetMax            Float?
+  additionalNotes      String?
+  contactName          String
+  contactEmail         String
+  contactPhone         String
+  companyName          String?
+  gdprConsent          Boolean       @default(false)
+
+  // AI enrichment fields
+  aiComplexityScore    Float?
+  aiSuggestedVehicle   VehicleType?
+  aiEstimatedPriceMin  Float?
+  aiEstimatedPriceMax  Float?
+  aiQualityScore       Float?
+
+  deletedAt            DateTime?
+
+  customer             User                   @relation(fields: [customerId], references: [id])
+  sourceEmail          InboundEmail?          @relation(fields: [sourceEmailId], references: [id])
+  supplierEnquiries    SupplierEnquiry[]
+  customerQuotes       CustomerQuote[]
+  bookings             Booking[]
+  statusHistory        EnquiryStatusHistory[]
+  aiDecisionLogs       AiDecisionLog[]
+  humanReviewTasks     HumanReviewTask[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([referenceNumber])
+  @@index([createdAt])
+}
+
+model EnquiryStatusHistory {
+  id          String        @id @default(cuid())
+  createdAt   DateTime      @default(now())
+  enquiryId   String
+  fromStatus  EnquiryStatus?
+  toStatus    EnquiryStatus
+  changedById String?
+  notes       String?
+
+  enquiry     Enquiry       @relation(fields: [enquiryId], references: [id])
+
+  @@index([enquiryId])
+}
+
+model SupplierEnquiry {
+  id             String    @id @default(cuid())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  enquiryId      String
+  organisationId String
+  accessToken    String    @unique @default(cuid())
+  status         String    @default("PENDING")
+  aiRank         Int?
+  aiScore        Float?
+  aiReasoning    String?
+  emailSentAt    DateTime?
+  viewedAt       DateTime?
+  expiresAt      DateTime?
+
+  enquiry        Enquiry       @relation(fields: [enquiryId], references: [id])
+  organisation   Organisation  @relation(fields: [organisationId], references: [id])
+  supplierQuote  SupplierQuote?
+
+  @@unique([enquiryId, organisationId])
+  @@index([accessToken])
+  @@index([enquiryId])
+  @@index([organisationId])
+}
+
+model SupplierQuote {
+  id                String              @id @default(cuid())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  supplierEnquiryId String              @unique
+  organisationId    String
+  basePrice         Float
+  fuelSurcharge     Float               @default(0)
+  tollCharges       Float               @default(0)
+  parkingCharges    Float               @default(0)
+  otherCharges      Float               @default(0)
+  totalPrice        Float
+  currency          String              @default("GBP")
+  vehicleId         String?
+  vehicleOffered    String?
+  notes             String?
+  validUntil        DateTime?
+  status            SupplierQuoteStatus @default(SUBMITTED)
+
+  // AI fields
+  aiFairnessScore   Float?
+  aiRanking         Int?
+  aiReasoning       String?
+  aiAnomalyFlag     Boolean             @default(false)
+
+  supplierEnquiry   SupplierEnquiry     @relation(fields: [supplierEnquiryId], references: [id])
+  organisation      Organisation        @relation(fields: [organisationId], references: [id])
+  vehicle           Vehicle?            @relation(fields: [vehicleId], references: [id])
+  customerQuotes    CustomerQuote[]
+
+  @@index([organisationId])
+  @@index([status])
+}
+
+model CustomerQuote {
+  id                      String              @id @default(cuid())
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  referenceNumber         String              @unique
+  enquiryId               String
+  supplierQuoteId         String
+  supplierPrice           Float
+  markupPercentage        Float
+  markupAmount            Float
+  subtotal                Float
+  vatRate                 Float               @default(20)
+  vatAmount               Float
+  totalPrice              Float
+  currency                String              @default("GBP")
+  acceptanceToken         String              @unique @default(cuid())
+  status                  CustomerQuoteStatus @default(DRAFT)
+  sentAt                  DateTime?
+  respondedAt             DateTime?
+  validUntil              DateTime?
+  declineReason           String?
+
+  // AI fields
+  aiMarkupReasoning       String?
+  aiAcceptanceProbability Float?
+  aiDescription           String?
+  aiEmailBody             String?
+
+  enquiry                 Enquiry        @relation(fields: [enquiryId], references: [id])
+  supplierQuote           SupplierQuote  @relation(fields: [supplierQuoteId], references: [id])
+  booking                 Booking?
+  payments                Payment[]
+
+  @@index([enquiryId])
+  @@index([status])
+  @@index([acceptanceToken])
+}
+
+model Booking {
+  id                  String        @id @default(cuid())
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  referenceNumber     String        @unique
+  enquiryId           String
+  customerQuoteId     String        @unique
+  organisationId      String
+  status              BookingStatus @default(CONFIRMED)
+  supplierAccessToken String        @unique @default(cuid())
+  vehicleId           String?
+  driverId            String?
+  preTripData         Json?
+  preTripSubmittedAt  DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  cancellationReason  String?
+  deletedAt           DateTime?
+
+  enquiry             Enquiry              @relation(fields: [enquiryId], references: [id])
+  customerQuote       CustomerQuote        @relation(fields: [customerQuoteId], references: [id])
+  organisation        Organisation         @relation(fields: [organisationId], references: [id])
+  vehicle             Vehicle?             @relation(fields: [vehicleId], references: [id])
+  driver              DriverProfile?       @relation(fields: [driverId], references: [id])
+  documents           Document[]
+  payments            Payment[]
+  statusHistory       BookingStatusHistory[]
+  surveyResponses     SurveyResponse[]
+
+  @@index([status])
+  @@index([organisationId])
+  @@index([enquiryId])
+}
+
+model BookingStatusHistory {
+  id          String        @id @default(cuid())
+  createdAt   DateTime      @default(now())
+  bookingId   String
+  fromStatus  BookingStatus?
+  toStatus    BookingStatus
+  changedById String?
+  notes       String?
+
+  booking     Booking       @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId])
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  bookingId             String?
+  customerQuoteId       String?
+  stripeSessionId       String?       @unique
+  stripePaymentIntentId String?       @unique
+  amount                Float
+  currency              String        @default("GBP")
+  status                PaymentStatus @default(PENDING)
+  description           String?
+  refundedAmount        Float         @default(0)
+  metadata              Json?
+
+  booking               Booking?       @relation(fields: [bookingId], references: [id])
+  customerQuote         CustomerQuote? @relation(fields: [customerQuoteId], references: [id])
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+model Document {
+  id              String       @id @default(cuid())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  type            DocumentType
+  fileName        String
+  fileUrl         String
+  fileSize        Int?
+  mimeType        String?
+  description     String?
+  expiresAt       DateTime?
+  isVerified      Boolean      @default(false)
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  organisationId  String?
+  vehicleId       String?
+  driverProfileId String?
+  bookingId       String?
+  uploadedById    String?
+
+  organisation    Organisation? @relation(fields: [organisationId], references: [id])
+  booking         Booking?      @relation(fields: [bookingId], references: [id])
+
+  @@index([type])
+  @@index([organisationId])
+  @@index([bookingId])
+}
+
+model Notification {
+  id         String             @id @default(cuid())
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  userId     String
+  title      String
+  message    String
+  channel    NotificationChannel @default(IN_APP)
+  status     NotificationStatus  @default(PENDING)
+  link       String?
+  readAt     DateTime?
+  sentAt     DateTime?
+  retryCount Int                @default(0)
+  metadata   Json?
+
+  user       User               @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SurveyTemplate {
+  id          String           @id @default(cuid())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  name        String
+  type        SurveyType
+  description String?
+  questions   Json
+  isActive    Boolean          @default(true)
+  deletedAt   DateTime?
+
+  surveyResponses SurveyResponse[]
+}
+
+model SurveyResponse {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  templateId    String
+  bookingId     String
+  respondentId  String?
+  accessToken   String    @unique @default(cuid())
+  answers       Json
+  overallRating Int?
+  comments      String?
+  completedAt   DateTime?
+
+  template      SurveyTemplate @relation(fields: [templateId], references: [id])
+  booking       Booking        @relation(fields: [bookingId], references: [id])
+  respondent    User?          @relation(fields: [respondentId], references: [id])
+
+  @@index([bookingId])
+  @@index([templateId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  action     String
+  entityType String
+  entityId   String
+  actorId    String?
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+
+  actor      User?    @relation(fields: [actorId], references: [id])
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  key         String   @unique
+  value       Json
+  description String?
+  updatedById String?
+
+  @@index([key])
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  slug      String   @unique
+  name      String
+  subject   String
+  htmlBody  String
+  textBody  String?
+  variables String[]
+  isActive  Boolean  @default(true)
+
+  @@index([slug])
+}
+
+model Sequence {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  prefix       String
+  year         Int
+  currentValue Int      @default(0)
+
+  @@unique([prefix, year])
+}
+
+// ============================================================================
+// AI Models
+// ============================================================================
+
+model AiDecisionLog {
+  id               String       @id @default(cuid())
+  createdAt        DateTime     @default(now())
+  taskType         AiTaskType
+  pipelineId       String?
+  promptVersion    String
+  enquiryId        String?
+  quoteId          String?
+  bookingId        String?
+  provider         String
+  model            String
+  promptMessages   Json
+  rawResponse      Json
+  parsedOutput     Json
+  confidenceScore  Float
+  autoExecuted     Boolean
+  actionTaken      AiActionTaken
+  escalatedReason  String?
+  overriddenBy     String?
+  overriddenAt     DateTime?
+  overrideReason   String?
+  overrideData     Json?
+  latencyMs        Int
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+  estimatedCostUsd Float
+  feedbackScore    Int?
+  feedbackNotes    String?
+
+  enquiry          Enquiry?          @relation(fields: [enquiryId], references: [id])
+  humanReviewTasks HumanReviewTask[]
+
+  @@index([taskType, createdAt])
+  @@index([enquiryId])
+  @@index([pipelineId])
+  @@index([actionTaken, createdAt])
+}
+
+model HumanReviewTask {
+  id              String            @id @default(cuid())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  taskType        AiTaskType
+  enquiryId       String?
+  reason          HumanReviewReason
+  context         Json
+  status          HumanReviewStatus @default(PENDING)
+  resolvedBy      String?
+  resolvedAt      DateTime?
+  resolution      Json?
+  aiDecisionLogId String?
+
+  enquiry         Enquiry?       @relation(fields: [enquiryId], references: [id])
+  aiDecisionLog   AiDecisionLog? @relation(fields: [aiDecisionLogId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([taskType, status])
+}
+
+model AiCostRecord {
+  id               String     @id @default(cuid())
+  createdAt        DateTime   @default(now())
+  date             DateTime   @db.Date
+  taskType         AiTaskType
+  provider         String
+  model            String
+  enquiryId        String?
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+  estimatedCostUsd Float
+
+  @@index([date, taskType])
+  @@index([date])
+}
+
+model AiConfig {
+  id          String   @id @default(cuid())
+  updatedAt   DateTime @updatedAt
+  updatedBy   String
+  key         String   @unique
+  value       Json
+  description String?
+
+  @@index([key])
+}
+
+model InboundEmail {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  fromEmail   String
+  fromName    String?
+  subject     String
+  body        String
+  rawHeaders  Json?
+  receivedAt  DateTime  @default(now())
+  processed   Boolean   @default(false)
+  processedAt DateTime?
+  enquiryId   String?
+  error       String?
+
+  enquiry     Enquiry?
+
+  @@index([processed, createdAt])
+  @@index([fromEmail])
+}
