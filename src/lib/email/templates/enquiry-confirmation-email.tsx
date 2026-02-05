@@ -150,7 +150,7 @@ export function EnquiryConfirmationEmail({
 
       {/* CTA - fallback for logged-in users */}
       {!dashboardUrl && (
-        <EmailButton href="https://groupbus.co.uk/dashboard">
+        <EmailButton href={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard`}>
           View Your Dashboard
         </EmailButton>
       )}

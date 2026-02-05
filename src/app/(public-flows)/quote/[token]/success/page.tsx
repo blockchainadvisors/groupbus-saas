@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Booking Confirmed - GroupBus",
@@ -115,10 +116,10 @@ export default async function QuoteSuccessPage({
             <p className="text-xs text-muted-foreground">
               Questions? Contact us at{" "}
               <a
-                href="mailto:support@groupbus.co.uk"
+                href={`mailto:${siteConfig.support.email}`}
                 className="text-primary underline underline-offset-2"
               >
-                support@groupbus.co.uk
+                {siteConfig.support.email}
               </a>
             </p>
           </div>

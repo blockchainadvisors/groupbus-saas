@@ -57,8 +57,13 @@ async function processJob(job: Job<EmailJobData>) {
 
   log.info({ jobId: job.id, to, subject }, "Processing email job");
 
+  // SMTP_FROM must be set in environment (e.g., noreply@groupbus.badev.tools)
+  if (!process.env.SMTP_FROM) {
+    throw new Error("SMTP_FROM environment variable is required");
+  }
+
   const mailOptions: Record<string, unknown> = {
-    from: process.env.SMTP_FROM ?? "noreply@groupbus.co.uk",
+    from: process.env.SMTP_FROM,
     to: Array.isArray(to) ? to.join(", ") : to,
     subject,
     html,

@@ -11,6 +11,10 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 
+// App URLs from environment
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const APP_DOMAIN = new URL(APP_URL).hostname.replace(/^www\./, "");
+
 // Brand colors
 const colors = {
   primary: "#2563eb",
@@ -63,11 +67,11 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
               GroupBus Ltd | Your trusted coach hire partner
             </Text>
             <Text style={styles.footerLinks}>
-              <Link href="https://groupbus.co.uk" style={styles.footerLink}>Website</Link>
+              <Link href={APP_URL} style={styles.footerLink}>Website</Link>
               {" | "}
-              <Link href="mailto:support@groupbus.co.uk" style={styles.footerLink}>Support</Link>
+              <Link href={`mailto:support@${APP_DOMAIN}`} style={styles.footerLink}>Support</Link>
               {" | "}
-              <Link href="https://groupbus.co.uk/privacy" style={styles.footerLink}>Privacy</Link>
+              <Link href={`${APP_URL}/privacy`} style={styles.footerLink}>Privacy</Link>
             </Text>
             <Text style={styles.copyright}>
               &copy; {new Date().getFullYear()} GroupBus Ltd. All rights reserved.

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { renderEmail } from "@/lib/email/render";
 import { MagicLinkPurpose } from "@prisma/client";
 
+// Use environment variable for sample URLs
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 // Sample data for preview
 const SAMPLE_DATA = {
   quote: {
@@ -19,7 +22,7 @@ const SAMPLE_DATA = {
     },
     totalPrice: "£1,450.00",
     validUntil: "10 March 2024",
-    acceptUrl: "https://groupbus.co.uk/quote/accept/abc123",
+    acceptUrl: `${APP_URL}/quote/accept/abc123`,
     personalizedMessage:
       "Based on your requirements, we've selected a premium executive coach perfect for your corporate away day.",
   },
@@ -48,7 +51,7 @@ const SAMPLE_DATA = {
       phone: "07700 900123",
     },
     totalAmount: "£1,450.00",
-    portalUrl: "https://groupbus.co.uk/booking/GB-BK-2024-00456",
+    portalUrl: `${APP_URL}/booking/GB-BK-2024-00456`,
   },
   "enquiry-confirmation": {
     customerName: "Sarah Johnson",
@@ -77,7 +80,7 @@ const SAMPLE_DATA = {
       departureTime: "09:00",
       passengerCount: 45,
     },
-    portalUrl: "https://groupbus.co.uk/supplier/bookings/abc123",
+    portalUrl: `${APP_URL}/supplier/bookings/abc123`,
   },
   "supplier-response-accepted": {
     supplierName: "Premier Coaches Ltd",
@@ -88,7 +91,7 @@ const SAMPLE_DATA = {
       dropoffLocation: "Manchester Piccadilly",
       departureDate: "Saturday, 15 March 2024",
     },
-    bookingUrl: "https://groupbus.co.uk/bookings/abc123",
+    bookingUrl: `${APP_URL}/bookings/abc123`,
   },
   "supplier-response-rejected": {
     supplierName: "Premier Coaches Ltd",
@@ -100,7 +103,7 @@ const SAMPLE_DATA = {
       dropoffLocation: "Manchester Piccadilly",
       departureDate: "Saturday, 15 March 2024",
     },
-    bookingUrl: "https://groupbus.co.uk/bookings/abc123",
+    bookingUrl: `${APP_URL}/bookings/abc123`,
   },
   "trip-completion-customer": {
     recipientName: "John Smith",
@@ -111,7 +114,7 @@ const SAMPLE_DATA = {
       dropoffLocation: "Manchester Piccadilly",
       departureDate: "Saturday, 15 March 2024",
     },
-    surveyUrl: "https://groupbus.co.uk/survey?booking=GB-BK-2024-00456",
+    surveyUrl: `${APP_URL}/survey?booking=GB-BK-2024-00456`,
   },
   "trip-completion-supplier": {
     recipientName: "Premier Coaches Ltd",
@@ -133,7 +136,7 @@ const SAMPLE_DATA = {
       dropoffLocation: "Manchester Piccadilly",
       departureDate: "Saturday, 15 March 2024",
     },
-    contactUrl: "https://groupbus.co.uk/contact",
+    contactUrl: `${APP_URL}/contact`,
   },
   "booking-cancellation-supplier": {
     recipientName: "Premier Coaches Ltd",
@@ -147,25 +150,25 @@ const SAMPLE_DATA = {
     },
   },
   "magic-link-login": {
-    magicLinkUrl: "https://groupbus.co.uk/api/auth/magic-link/verify?token=abc123xyz",
+    magicLinkUrl: `${APP_URL}/api/auth/magic-link/verify?token=abc123xyz`,
     expirationTime: "15 minutes",
     purpose: MagicLinkPurpose.LOGIN,
     ipAddress: "192.168.1.100",
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0",
   },
   "magic-link-enquiry": {
-    magicLinkUrl: "https://groupbus.co.uk/api/auth/magic-link/verify?token=def456uvw",
+    magicLinkUrl: `${APP_URL}/api/auth/magic-link/verify?token=def456uvw`,
     expirationTime: "24 hours",
     purpose: MagicLinkPurpose.ENQUIRY_ACCESS,
     ipAddress: "10.0.0.50",
   },
   "magic-link-supplier": {
-    magicLinkUrl: "https://groupbus.co.uk/api/auth/magic-link/verify?token=ghi789rst",
+    magicLinkUrl: `${APP_URL}/api/auth/magic-link/verify?token=ghi789rst`,
     expirationTime: "7 days",
     purpose: MagicLinkPurpose.SUPPLIER_ONBOARDING,
   },
   "supplier-invite": {
-    magicLinkUrl: "https://groupbus.co.uk/api/auth/magic-link/verify?token=jkl012mno",
+    magicLinkUrl: `${APP_URL}/api/auth/magic-link/verify?token=jkl012mno`,
     organisationName: "Premier Coaches Ltd",
     expirationTime: "7 days",
     contactName: "David Wilson",
@@ -184,7 +187,7 @@ const SAMPLE_DATA = {
       tripType: "Return Journey",
       specialRequirements: "Wheelchair accessible vehicle required. 2 passengers use wheelchairs.",
     },
-    dashboardUrl: "https://groupbus.co.uk/api/auth/magic-link/verify?token=pqr345stu&redirectTo=/enquiries/abc123",
+    dashboardUrl: `${APP_URL}/api/auth/magic-link/verify?token=pqr345stu&redirectTo=/enquiries/abc123`,
   },
 };
 
