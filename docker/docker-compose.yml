@@ -20,6 +20,14 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: gb-mailpit
+    ports:
+      - "8025:8025"   # Web UI
+      - "1025:1025"   # SMTP
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     container_name: gb-redis

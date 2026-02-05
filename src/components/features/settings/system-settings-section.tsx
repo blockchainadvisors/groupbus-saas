@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Check, Pencil, X, Plus } from "lucide-react";
+import { formatDateTime } from "@/lib/utils";
 
 interface SettingItem {
   id: string;
@@ -183,7 +184,7 @@ function SettingRow({ setting }: { setting: SettingItem }) {
       )}
 
       <p className="text-xs text-muted-foreground">
-        Last updated: {new Date(setting.updatedAt).toLocaleString()}
+        Last updated: {formatDateTime(setting.updatedAt)}
       </p>
     </div>
   );
