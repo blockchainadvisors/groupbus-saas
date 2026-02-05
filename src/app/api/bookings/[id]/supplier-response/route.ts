@@ -99,26 +99,47 @@ export async function POST(
       return updated;
     });
 
-    // Queue notification email to admin about supplier response
-    await emailQueue.add("booking-supplier-response", {
-      bookingReference: booking.referenceNumber,
-      enquiryReference: booking.enquiry.referenceNumber,
-      organisationName: booking.organisation.name,
-      action,
-      reason: reason ?? null,
-      tripDetails: {
-        pickupLocation: booking.enquiry.pickupLocation,
-        dropoffLocation: booking.enquiry.dropoffLocation,
-        departureDate: booking.enquiry.departureDate,
-      },
+    // Find admin email to notify about supplier response
+    const adminUser = await prisma.user.findFirst({
+      where: { role: { in: ["SUPERADMIN", "ADMIN"] }, isActive: true },
+      select: { email: true },
     });
 
-    await notificationQueue.add("booking-supplier-response", {
-      bookingId: id,
-      organisationId: booking.organisationId,
-      type: newStatus,
-      action,
+    if (adminUser?.email) {
+      const actionLabel = action === "accept" ? "Accepted" : "Rejected";
+      const rejectReason = action === "reject" && reason ? `<p><strong>Reason:</strong> ${reason}</p>` : "";
+
+      await emailQueue.add("send-email", {
+        to: adminUser.email,
+        subject: `Booking ${booking.referenceNumber} – Supplier ${actionLabel}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1a1a1a;">Supplier ${actionLabel} Booking</h2>
+            <p>${booking.organisation.name} has <strong>${action}ed</strong> booking <strong>${booking.referenceNumber}</strong>.</p>
+            ${rejectReason}
+            <p><strong>Trip:</strong> ${booking.enquiry.pickupLocation} → ${booking.enquiry.dropoffLocation}</p>
+            <p><strong>Date:</strong> ${booking.enquiry.departureDate?.toLocaleDateString("en-GB")}</p>
+            ${action === "reject" ? "<p>Please reassign this booking to another supplier.</p>" : ""}
+            <p>Kind regards,<br/>GroupBus</p>
+          </div>
+        `.trim(),
+      });
+    }
+
+    // Notify admin users in-app
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ["SUPERADMIN", "ADMIN"] }, isActive: true },
+      select: { id: true },
     });
+    for (const admin of admins) {
+      await notificationQueue.add("notification", {
+        userId: admin.id,
+        type: "BOOKING_UPDATE",
+        title: `Supplier ${action === "accept" ? "Accepted" : "Rejected"}`,
+        message: `${booking.organisation.name} ${action}ed booking ${booking.referenceNumber}`,
+        link: `/bookings/${id}`,
+      });
+    }
 
     return NextResponse.json(updatedBooking);
   } catch (error) {

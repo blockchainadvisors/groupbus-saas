@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Worker, Job } from "bullmq";
 import { createTransport, Transporter } from "nodemailer";
 import { getRedisConnection, closeRedisConnection } from "../shared/queue";
@@ -27,14 +28,18 @@ interface EmailJobData {
 // ---------------------------------------------------------------------------
 
 function createSmtpTransport(): Transporter {
+  const smtpHost = process.env.SMTP_HOST ?? "in-v3.mailjet.com";
+  const smtpPort = Number(process.env.SMTP_PORT ?? 587);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  log.info({ host: smtpHost, port: smtpPort, hasAuth: !!(smtpUser && smtpPass) }, "Creating SMTP transport");
+
   const transport = createTransport({
-    host: process.env.SMTP_HOST ?? "in-v3.mailjet.com",
-    port: Number(process.env.SMTP_PORT ?? 587),
+    host: smtpHost,
+    port: smtpPort,
     secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
+    ...(smtpUser && smtpPass ? { auth: { user: smtpUser, pass: smtpPass } } : {}),
   });
 
   log.info("SMTP transport created");

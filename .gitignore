@@ -51,3 +51,6 @@ pids/
 # OS
 .DS_Store
 Thumbs.db
+
+# Simulation screenshots
+screenshots/

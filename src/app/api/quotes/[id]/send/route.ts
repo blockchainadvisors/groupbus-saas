@@ -80,21 +80,40 @@ export async function POST(
     const acceptanceLink = `${baseUrl}/quote/accept?token=${updatedQuote.acceptanceToken}`;
 
     // Queue email to customer
-    await emailQueue.add("send-quote-to-customer", {
+    const priceFormatted = new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: updatedQuote.currency || "GBP",
+    }).format(Number(updatedQuote.totalPrice));
+
+    const emailBody = updatedQuote.aiEmailBody
+      ? `<p>${updatedQuote.aiEmailBody.replace(/\n/g, "</p><p>")}</p>`
+      : `
+        <p>Dear ${updatedQuote.enquiry.contactName},</p>
+        <p>Thank you for your enquiry <strong>${updatedQuote.enquiry.referenceNumber}</strong>.</p>
+        <p>We are pleased to provide you with a quote for your trip:</p>
+        <p><strong>From:</strong> ${updatedQuote.enquiry.pickupLocation}<br/>
+           <strong>To:</strong> ${updatedQuote.enquiry.dropoffLocation}<br/>
+           <strong>Date:</strong> ${updatedQuote.enquiry.departureDate?.toLocaleDateString("en-GB")}</p>
+        <p><strong>Total Price: ${priceFormatted}</strong></p>
+        <p>This quote is valid until <strong>${validUntil.toLocaleDateString("en-GB")}</strong>.</p>
+      `.trim();
+
+    await emailQueue.add("send-email", {
       to: updatedQuote.enquiry.contactEmail,
-      customerName: updatedQuote.enquiry.contactName,
-      quoteReference: updatedQuote.referenceNumber,
-      enquiryReference: updatedQuote.enquiry.referenceNumber,
-      totalPrice: updatedQuote.totalPrice,
-      currency: updatedQuote.currency,
-      validUntil: validUntil.toISOString(),
-      acceptanceLink,
-      tripDetails: {
-        pickupLocation: updatedQuote.enquiry.pickupLocation,
-        dropoffLocation: updatedQuote.enquiry.dropoffLocation,
-        departureDate: updatedQuote.enquiry.departureDate,
-      },
-      aiEmailBody: updatedQuote.aiEmailBody,
+      subject: `Your GroupBus Quote ${updatedQuote.referenceNumber} – ${priceFormatted}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1a1a1a;">Your Quote from GroupBus</h2>
+          ${emailBody}
+          <p style="margin-top: 24px;">
+            <a href="${acceptanceLink}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Accept Quote & Pay
+            </a>
+          </p>
+          <p style="color: #666; font-size: 12px;">Quote reference: ${updatedQuote.referenceNumber}. Valid until ${validUntil.toLocaleDateString("en-GB")}.</p>
+          <p>Kind regards,<br/>GroupBus</p>
+        </div>
+      `.trim(),
     });
 
     return NextResponse.json(updatedQuote);

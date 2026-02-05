@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { aiPipelineQueue } from "@/lib/queue";
+import { aiPipelineQueue, emailQueue } from "@/lib/queue";
 import { enquirySchema } from "@/lib/validations/enquiry";
 
 export async function POST(request: Request) {
@@ -88,6 +88,26 @@ export async function POST(request: Request) {
         toStatus: "SUBMITTED",
         notes: "Enquiry submitted via website",
       },
+    });
+
+    // Send confirmation email to customer
+    await emailQueue.add("send-email", {
+      to: validated.contactEmail,
+      subject: `Enquiry ${referenceNumber} – We've Received Your Request`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1a1a1a;">Enquiry Received</h2>
+          <p>Dear ${validated.contactName},</p>
+          <p>Thank you for your enquiry. We have received your request and it is now being processed.</p>
+          <p><strong>Reference:</strong> ${referenceNumber}</p>
+          <p><strong>From:</strong> ${validated.pickupLocation}<br/>
+             <strong>To:</strong> ${validated.dropoffLocation}<br/>
+             <strong>Date:</strong> ${new Date(validated.departureDate).toLocaleDateString("en-GB")}<br/>
+             <strong>Passengers:</strong> ${validated.passengerCount}</p>
+          <p>We will send you a quote shortly. If you have any questions in the meantime, please reply to this email quoting your reference number.</p>
+          <p>Kind regards,<br/>GroupBus</p>
+        </div>
+      `.trim(),
     });
 
     // Queue the AI pipeline job for enquiry intake processing

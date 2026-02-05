@@ -108,9 +108,41 @@ async function handleSurveyTrigger() {
     "survey-trigger: Bookings completed yesterday",
   );
 
-  // TODO: Create actual survey jobs (e.g. queue an email with survey link)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
+
   for (const booking of completedBookings) {
-    log.info({ bookingId: booking.id }, "survey-trigger: Would send survey for booking");
+    const enquiry = await prisma.enquiry.findUnique({
+      where: { id: booking.enquiryId },
+      select: { contactEmail: true, contactName: true },
+    });
+
+    if (!enquiry?.contactEmail) {
+      log.warn({ bookingId: booking.id }, "survey-trigger: No contact email found, skipping");
+      continue;
+    }
+
+    const surveyLink = `${baseUrl}/survey?booking=${booking.id}`;
+
+    await emailQueue.add("send-email", {
+      to: enquiry.contactEmail,
+      subject: "How was your trip? – GroupBus Feedback Survey",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1a1a1a;">We'd Love Your Feedback</h2>
+          <p>Dear ${enquiry.contactName},</p>
+          <p>Thank you for travelling with GroupBus. We hope you had a great experience!</p>
+          <p>Please take a moment to share your feedback — it helps us improve our service for everyone.</p>
+          <p style="margin-top: 16px;">
+            <a href="${surveyLink}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Complete Survey
+            </a>
+          </p>
+          <p>Kind regards,<br/>GroupBus</p>
+        </div>
+      `.trim(),
+    });
+
+    log.info({ bookingId: booking.id, to: enquiry.contactEmail }, "survey-trigger: Queued survey email");
   }
 }
 
