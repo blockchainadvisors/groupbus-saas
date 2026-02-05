@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emailQueue, notificationQueue } from "@/lib/queue";
+import { renderEmail } from "@/lib/email/render";
 
 export async function POST(
   request: Request,
@@ -107,22 +108,34 @@ export async function POST(
 
     if (adminUser?.email) {
       const actionLabel = action === "accept" ? "Accepted" : "Rejected";
-      const rejectReason = action === "reject" && reason ? `<p><strong>Reason:</strong> ${reason}</p>` : "";
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
+      const bookingUrl = `${baseUrl}/bookings/${id}`;
+
+      const responseEmailHtml = await renderEmail({
+        type: "supplier-response",
+        props: {
+          supplierName: booking.organisation.name,
+          bookingReference: booking.referenceNumber,
+          action: action === "accept" ? "accepted" : "rejected",
+          reason: action === "reject" && reason ? String(reason) : undefined,
+          tripDetails: {
+            pickupLocation: booking.enquiry.pickupLocation ?? "",
+            dropoffLocation: booking.enquiry.dropoffLocation ?? "",
+            departureDate: booking.enquiry.departureDate?.toLocaleDateString("en-GB", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }) ?? "",
+          },
+          bookingUrl,
+        },
+      });
 
       await emailQueue.add("send-email", {
         to: adminUser.email,
         subject: `Booking ${booking.referenceNumber} – Supplier ${actionLabel}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1a1a1a;">Supplier ${actionLabel} Booking</h2>
-            <p>${booking.organisation.name} has <strong>${action}ed</strong> booking <strong>${booking.referenceNumber}</strong>.</p>
-            ${rejectReason}
-            <p><strong>Trip:</strong> ${booking.enquiry.pickupLocation} → ${booking.enquiry.dropoffLocation}</p>
-            <p><strong>Date:</strong> ${booking.enquiry.departureDate?.toLocaleDateString("en-GB")}</p>
-            ${action === "reject" ? "<p>Please reassign this booking to another supplier.</p>" : ""}
-            <p>Kind regards,<br/>GroupBus</p>
-          </div>
-        `.trim(),
+        html: responseEmailHtml,
       });
     }
 

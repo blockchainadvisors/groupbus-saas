@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emailQueue } from "@/lib/queue";
+import { renderEmail } from "@/lib/email/render";
 
 export async function POST(
   _request: Request,
@@ -79,41 +80,44 @@ export async function POST(
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
     const acceptanceLink = `${baseUrl}/quote/accept?token=${updatedQuote.acceptanceToken}`;
 
-    // Queue email to customer
+    // Queue email to customer using React Email template
     const priceFormatted = new Intl.NumberFormat("en-GB", {
       style: "currency",
       currency: updatedQuote.currency || "GBP",
     }).format(Number(updatedQuote.totalPrice));
 
-    const emailBody = updatedQuote.aiEmailBody
-      ? `<p>${updatedQuote.aiEmailBody.replace(/\n/g, "</p><p>")}</p>`
-      : `
-        <p>Dear ${updatedQuote.enquiry.contactName},</p>
-        <p>Thank you for your enquiry <strong>${updatedQuote.enquiry.referenceNumber}</strong>.</p>
-        <p>We are pleased to provide you with a quote for your trip:</p>
-        <p><strong>From:</strong> ${updatedQuote.enquiry.pickupLocation}<br/>
-           <strong>To:</strong> ${updatedQuote.enquiry.dropoffLocation}<br/>
-           <strong>Date:</strong> ${updatedQuote.enquiry.departureDate?.toLocaleDateString("en-GB")}</p>
-        <p><strong>Total Price: ${priceFormatted}</strong></p>
-        <p>This quote is valid until <strong>${validUntil.toLocaleDateString("en-GB")}</strong>.</p>
-      `.trim();
+    const emailHtml = await renderEmail({
+      type: "quote",
+      props: {
+        customerName: updatedQuote.enquiry.contactName,
+        quoteReference: updatedQuote.referenceNumber,
+        tripDetails: {
+          pickupLocation: updatedQuote.enquiry.pickupLocation ?? "",
+          dropoffLocation: updatedQuote.enquiry.dropoffLocation ?? "",
+          departureDate: updatedQuote.enquiry.departureDate?.toLocaleDateString("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }) ?? "",
+          passengerCount: 0, // Will be populated from enquiry if available
+        },
+        totalPrice: priceFormatted,
+        validUntil: validUntil.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }),
+        acceptUrl: acceptanceLink,
+        personalizedMessage: updatedQuote.aiEmailBody ?? undefined,
+      },
+    });
 
     await emailQueue.add("send-email", {
       to: updatedQuote.enquiry.contactEmail,
       subject: `Your GroupBus Quote ${updatedQuote.referenceNumber} – ${priceFormatted}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1a1a1a;">Your Quote from GroupBus</h2>
-          ${emailBody}
-          <p style="margin-top: 24px;">
-            <a href="${acceptanceLink}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Accept Quote & Pay
-            </a>
-          </p>
-          <p style="color: #666; font-size: 12px;">Quote reference: ${updatedQuote.referenceNumber}. Valid until ${validUntil.toLocaleDateString("en-GB")}.</p>
-          <p>Kind regards,<br/>GroupBus</p>
-        </div>
-      `.trim(),
+      html: emailHtml,
     });
 
     return NextResponse.json(updatedQuote);

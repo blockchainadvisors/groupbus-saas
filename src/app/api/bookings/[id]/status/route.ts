@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emailQueue, notificationQueue } from "@/lib/queue";
+import { renderEmail } from "@/lib/email/render";
 
 // Valid status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -133,88 +134,108 @@ export async function PATCH(
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
 
     if (status === "COMPLETED") {
-      // Email customer with completion + survey link
+      const tripDetails = {
+        pickupLocation: booking.enquiry?.pickupLocation ?? "",
+        dropoffLocation: booking.enquiry?.dropoffLocation ?? "",
+        departureDate: booking.enquiry?.departureDate?.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }) ?? "",
+      };
+
+      // Email customer with completion + survey link using React Email template
       if (booking.enquiry?.contactEmail) {
         const surveyLink = `${baseUrl}/survey?booking=${booking.referenceNumber}`;
+        const customerCompletionHtml = await renderEmail({
+          type: "trip-completion",
+          props: {
+            recipientName: booking.enquiry.contactName,
+            recipientType: "customer",
+            bookingReference: booking.referenceNumber,
+            tripDetails,
+            surveyUrl: surveyLink,
+          },
+        });
+
         await emailQueue.add("send-email", {
           to: booking.enquiry.contactEmail,
           subject: `Booking ${booking.referenceNumber} – Trip Completed`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1a1a1a;">Your Trip is Complete</h2>
-              <p>Dear ${booking.enquiry.contactName},</p>
-              <p>We hope you had a great journey! Your booking <strong>${booking.referenceNumber}</strong> has been marked as completed.</p>
-              <p><strong>Trip:</strong> ${booking.enquiry.pickupLocation} → ${booking.enquiry.dropoffLocation}</p>
-              <p>We would love to hear about your experience. Please take a moment to complete our short survey:</p>
-              <p style="margin-top: 16px;">
-                <a href="${surveyLink}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                  Complete Survey
-                </a>
-              </p>
-              <p>Kind regards,<br/>GroupBus</p>
-            </div>
-          `.trim(),
+          html: customerCompletionHtml,
         });
       }
 
-      // Email supplier with completion confirmation
+      // Email supplier with completion confirmation using React Email template
       if (booking.organisation?.email) {
+        const supplierCompletionHtml = await renderEmail({
+          type: "trip-completion",
+          props: {
+            recipientName: booking.organisation.name,
+            recipientType: "supplier",
+            bookingReference: booking.referenceNumber,
+            tripDetails,
+          },
+        });
+
         await emailQueue.add("send-email", {
           to: booking.organisation.email,
           subject: `Booking ${booking.referenceNumber} – Job Completed`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1a1a1a;">Job Completed</h2>
-              <p>Dear ${booking.organisation.name},</p>
-              <p>Booking <strong>${booking.referenceNumber}</strong> has been marked as completed. Thank you for your service.</p>
-              <p><strong>Trip:</strong> ${booking.enquiry?.pickupLocation} → ${booking.enquiry?.dropoffLocation}</p>
-              <p><strong>Date:</strong> ${booking.enquiry?.departureDate?.toLocaleDateString("en-GB")}</p>
-              <p>Kind regards,<br/>GroupBus</p>
-            </div>
-          `.trim(),
+          html: supplierCompletionHtml,
         });
       }
     }
 
     if (status === "CANCELLED") {
-      const cancelReason = cancellationReason
-        ? `<p><strong>Reason:</strong> ${cancellationReason}</p>`
-        : "";
+      const tripDetails = {
+        pickupLocation: booking.enquiry?.pickupLocation ?? "",
+        dropoffLocation: booking.enquiry?.dropoffLocation ?? "",
+        departureDate: booking.enquiry?.departureDate?.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }) ?? "",
+      };
 
-      // Email customer about cancellation
+      // Email customer about cancellation using React Email template
       if (booking.enquiry?.contactEmail) {
+        const customerCancellationHtml = await renderEmail({
+          type: "booking-cancellation",
+          props: {
+            recipientName: booking.enquiry.contactName,
+            recipientType: "customer",
+            bookingReference: booking.referenceNumber,
+            cancellationReason: cancellationReason ?? undefined,
+            tripDetails,
+            contactUrl: `${baseUrl}/contact`,
+          },
+        });
+
         await emailQueue.add("send-email", {
           to: booking.enquiry.contactEmail,
           subject: `Booking ${booking.referenceNumber} – Cancelled`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1a1a1a;">Booking Cancelled</h2>
-              <p>Dear ${booking.enquiry.contactName},</p>
-              <p>We regret to inform you that booking <strong>${booking.referenceNumber}</strong> has been cancelled.</p>
-              ${cancelReason}
-              <p><strong>Trip:</strong> ${booking.enquiry.pickupLocation} → ${booking.enquiry.dropoffLocation}</p>
-              <p>If you have any questions or would like to rebook, please don't hesitate to contact us.</p>
-              <p>Kind regards,<br/>GroupBus</p>
-            </div>
-          `.trim(),
+          html: customerCancellationHtml,
         });
       }
 
-      // Email supplier about cancellation
+      // Email supplier about cancellation using React Email template
       if (booking.organisation?.email) {
+        const supplierCancellationHtml = await renderEmail({
+          type: "booking-cancellation",
+          props: {
+            recipientName: booking.organisation.name,
+            recipientType: "supplier",
+            bookingReference: booking.referenceNumber,
+            cancellationReason: cancellationReason ?? undefined,
+            tripDetails,
+          },
+        });
+
         await emailQueue.add("send-email", {
           to: booking.organisation.email,
           subject: `Booking ${booking.referenceNumber} – Cancelled`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1a1a1a;">Booking Cancelled</h2>
-              <p>Dear ${booking.organisation.name},</p>
-              <p>Booking <strong>${booking.referenceNumber}</strong> has been cancelled and no longer requires your service.</p>
-              ${cancelReason}
-              <p><strong>Trip:</strong> ${booking.enquiry?.pickupLocation} → ${booking.enquiry?.dropoffLocation}</p>
-              <p>Kind regards,<br/>GroupBus</p>
-            </div>
-          `.trim(),
+          html: supplierCancellationHtml,
         });
       }
     }

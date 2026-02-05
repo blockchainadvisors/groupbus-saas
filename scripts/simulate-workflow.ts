@@ -16,6 +16,70 @@
  *   - Docker services running (postgres, redis, mailpit)
  *   - Next.js dev server running on port 3000
  *   - Workers running (email, ai-pipeline, scheduler)
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * BROWSER DEPENDENCIES (Linux only)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Puppeteer automatically downloads its own Chromium browser to ~/.cache/puppeteer/
+ * However, on Linux, Chrome requires system-level shared libraries to run.
+ *
+ * If you see an error like:
+ *   "error while loading shared libraries: libnspr4.so: cannot open shared object file"
+ *
+ * Install the required dependencies:
+ *   sudo apt-get update && sudo apt-get install -y \
+ *     libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+ *     libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
+ *     libxrandr2 libgbm1 libasound2t64
+ *
+ * If emojis show as boxes in Mailpit, install emoji fonts:
+ *   sudo apt-get install -y fonts-noto-color-emoji
+ *
+ * On macOS/Windows: No additional setup needed - Puppeteer's bundled Chromium works.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * AI AGENT INSTRUCTIONS (for Claude Code or similar tools running this script)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * AFTER RUNNING THIS SCRIPT, FOLLOW THESE STEPS:
+ *
+ * 1. CHECK OUTPUT SCREENSHOTS
+ *    - Screenshots are saved to: screenshots/sim-{timestamp}/
+ *    - Read key screenshots to verify content loaded correctly:
+ *      • 03-step1-trip-details-filled.png - Should show filled form fields
+ *      • 11-step3-bid-form-loaded.png - Should show bid form (NOT loading spinner)
+ *      • 12-step3-bid-form-filled.png - Should show filled bid form with prices
+ *      • 17-step6-customer-quote-page.png - Should show quote details (NOT loading spinner)
+ *      • Email screenshots (*-email-*.png) - Should show GroupBus branded templates
+ *
+ * 2. VERIFY EMAIL TEMPLATES
+ *    - Email screenshots should show React Email templates with:
+ *      • GroupBus logo (🚌 emoji + "GroupBus" text)
+ *      • Styled reference badges with dashed borders
+ *      • Colored info boxes and detail tables
+ *      • Professional footer with links
+ *    - If emails show plain HTML (no styling), the React Email integration failed
+ *
+ * 3. COMMON ISSUES TO WATCH FOR
+ *    - "Loading bid request..." in screenshots = timing issue (increase wait time)
+ *    - "Loading your quote..." in screenshots = timing issue (increase wait time)
+ *    - Plain text emails without branding = renderEmail() not being called
+ *    - Missing screenshots = page navigation failed
+ *    - "cannot open shared object file" = missing Linux dependencies (see above)
+ *
+ * 4. DO NOT
+ *    - Take additional screenshots manually (the script handles all screenshots)
+ *    - Modify the database directly unless the script explicitly failed
+ *    - Re-run the script without checking why it failed first
+ *
+ * 5. IF SIMULATION FAILS
+ *    - Check the console output for the specific step that failed
+ *    - Read the last screenshot taken to see the UI state
+ *    - Check Mailpit at http://localhost:8025 for email delivery issues
+ *    - Verify all services are running (Next.js, workers, Docker)
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import "dotenv/config";
@@ -26,6 +90,46 @@ import crypto from "crypto";
 import puppeteer, { type Browser, type Page } from "puppeteer";
 import path from "path";
 import fs from "fs";
+import { execSync } from "child_process";
+
+// Pre-flight check for browser dependencies (Linux only)
+function checkBrowserDependencies() {
+  if (process.platform !== "linux") return; // Only needed on Linux
+
+  try {
+    const chromePath = execSync("node -e \"console.log(require('puppeteer').executablePath())\"", {
+      encoding: "utf-8",
+    }).trim();
+
+    if (!fs.existsSync(chromePath)) {
+      console.log("⚠️  Chrome not found. Running: npx puppeteer browsers install chrome");
+      execSync("npx puppeteer browsers install chrome", { stdio: "inherit" });
+    }
+
+    // Check for missing libraries
+    const lddOutput = execSync(`ldd "${chromePath}" 2>&1`, { encoding: "utf-8" });
+    const missingLibs = lddOutput
+      .split("\n")
+      .filter((line) => line.includes("not found"))
+      .map((line) => line.split("=>")[0].trim());
+
+    if (missingLibs.length > 0) {
+      console.error("\n❌ Missing browser dependencies detected:");
+      console.error("   " + missingLibs.join("\n   "));
+      console.error("\n📦 Install them with:");
+      console.error("   sudo apt-get update && sudo apt-get install -y libnss3 libnspr4 libasound2\n");
+      console.error("   Or for all dependencies:");
+      console.error("   sudo apt-get install -y libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 \\");
+      console.error("     libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \\");
+      console.error("     libxfixes3 libxrandr2 libgbm1 libasound2\n");
+      process.exit(1);
+    }
+  } catch {
+    // If check fails, let Puppeteer handle the error naturally
+  }
+}
+
+checkBrowserDependencies();
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -260,7 +364,17 @@ async function run() {
     if (!supplierUser) throw new Error("No supplier user in DB");
     const supplierCookie = await getSessionCookie(supplierUser.email, "supplier123!");
 
-    // Screenshot Mailpit before
+    // Clear Mailpit inbox before starting
+    try {
+      const deleteResponse = await fetch(`${MAILPIT_API}/messages`, { method: "DELETE" });
+      if (deleteResponse.ok) {
+        log("INIT", "Cleared Mailpit inbox");
+      }
+    } catch {
+      log("INIT", "Could not clear Mailpit inbox (may be empty or unavailable)");
+    }
+
+    // Screenshot Mailpit before (should be empty now)
     await page.goto(MAILPIT_URL, { waitUntil: "networkidle2", timeout: 10000 }).catch(() => {});
     await snap(page, "mailpit-before");
 
@@ -668,8 +782,27 @@ async function run() {
     const bidToken = supplierEnquiries[0].accessToken;
     log("STEP 3", `Navigating to bid form for ${supplierEnquiries[0].organisation.name}`);
 
-    // Navigate to bid page
+    // Navigate to bid page and wait for content to load
     await page.goto(`${APP_URL}/bid/${bidToken}`, { waitUntil: "networkidle2", timeout: 15000 });
+
+    // Wait for the bid form to load (loading spinner to disappear or form fields to appear)
+    try {
+      await page.waitForFunction(
+        () => {
+          // Check if loading spinner is gone
+          const loadingText = document.body.textContent?.includes("Loading bid request");
+          if (loadingText) return false;
+          // Check if form fields are present
+          const formField = document.querySelector('input[name="basePrice"], input[id="basePrice"], form');
+          return !!formField;
+        },
+        { timeout: 10000 }
+      );
+      log("STEP 3", "Bid form loaded successfully");
+    } catch {
+      log("STEP 3", "Warning: Bid form may not have loaded completely");
+    }
+    await sleep(500);
     await snap(page, "step3-bid-form-loaded");
 
     // Fill bid form
@@ -706,6 +839,8 @@ async function run() {
       await bidNotes.type("Simulation bid — standard 49-seat coach available", { delay: 10 });
     }
 
+    // Wait a moment for form state to settle before screenshot
+    await sleep(500);
     await snap(page, "step3-bid-form-filled");
 
     // Submit bid
@@ -876,6 +1011,27 @@ async function run() {
     await page.goto(`${APP_URL}/quote/${freshQuote.acceptanceToken}`, {
       waitUntil: "networkidle2", timeout: 15000,
     });
+
+    // Wait for quote data to load (loading spinner to disappear or quote details to appear)
+    try {
+      await page.waitForFunction(
+        () => {
+          // Check if loading spinner is gone
+          const loadingText = document.body.textContent?.includes("Loading your quote");
+          if (loadingText) return false;
+          // Check if quote details are present (price, accept button, etc.)
+          const priceEl = document.body.textContent?.match(/£[\d,]+(\.\d{2})?/);
+          const acceptBtn = document.querySelector('button, a');
+          const hasAcceptText = document.body.textContent?.toLowerCase().includes("accept");
+          return !!priceEl || (!!acceptBtn && hasAcceptText);
+        },
+        { timeout: 10000 }
+      );
+      log("STEP 6", "Quote page loaded successfully");
+    } catch {
+      log("STEP 6", "Warning: Quote page may not have loaded completely");
+    }
+    await sleep(500);
     await snap(page, "step6-customer-quote-page");
 
     // Click "Accept & Pay" button

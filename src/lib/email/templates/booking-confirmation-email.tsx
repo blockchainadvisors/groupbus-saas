@@ -65,7 +65,7 @@ export function BookingConfirmationEmail({
         <table width="100%" cellPadding={0} cellSpacing={0}>
           <tr>
             <td style={styles.successBannerInner}>
-              <span style={styles.successIcon}>&#10003;</span>
+              <span style={styles.successIcon}>✓</span>
               <span style={styles.successText}>Booking Confirmed!</span>
             </td>
           </tr>
@@ -193,19 +193,19 @@ export function BookingConfirmationEmail({
             <>
               <tr>
                 <td style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>&#128337;</span>
+                  <span style={styles.reminderIcon}>🕐</span>
                   Please be at the pick-up location 10 minutes early
                 </td>
               </tr>
               <tr>
                 <td style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>&#128222;</span>
+                  <span style={styles.reminderIcon}>📞</span>
                   Have the driver&apos;s contact number saved
                 </td>
               </tr>
               <tr>
                 <td style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>&#128179;</span>
+                  <span style={styles.reminderIcon}>🎫</span>
                   Keep your booking reference handy
                 </td>
               </tr>
@@ -214,19 +214,19 @@ export function BookingConfirmationEmail({
             <>
               <tr>
                 <td style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>&#128337;</span>
+                  <span style={styles.reminderIcon}>🕐</span>
                   Arrive at pick-up 15 minutes before departure
                 </td>
               </tr>
               <tr>
                 <td style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>&#128221;</span>
+                  <span style={styles.reminderIcon}>📝</span>
                   Verify passenger count matches the booking
                 </td>
               </tr>
               <tr>
                 <td style={styles.reminderItem}>
-                  <span style={styles.reminderIcon}>&#128222;</span>
+                  <span style={styles.reminderIcon}>📞</span>
                   Contact customer if any issues arise
                 </td>
               </tr>

@@ -44,7 +44,7 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
               <tr>
                 <td style={styles.logoCell}>
                   {/* Text-based logo with icon - no images needed */}
-                  <span style={styles.logoIcon}>&#128652;</span>
+                  <span style={styles.logoIcon}>🚌</span>
                   <span style={styles.logoText}>GroupBus</span>
                 </td>
               </tr>
@@ -212,7 +212,7 @@ export function Divider() {
             <tr>
               <td style={{ width: "40%", borderBottom: `2px solid ${colors.border}` }} />
               <td style={{ width: "20%", textAlign: "center" as const }}>
-                <span style={{ color: colors.textMuted, fontSize: "14px" }}>&#9670;</span>
+                <span style={{ color: colors.textMuted, fontSize: "14px" }}>◆</span>
               </td>
               <td style={{ width: "40%", borderBottom: `2px solid ${colors.border}` }} />
             </tr>
@@ -284,7 +284,7 @@ export function PriceDisplay({ amount, label }: { amount: string; label?: string
 const styles = {
   body: {
     backgroundColor: colors.background,
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif',
     margin: 0,
     padding: 0,
   },

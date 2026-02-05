@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { emailQueue, notificationQueue } from "@/lib/queue";
+import { renderEmail } from "@/lib/email/render";
 
 export async function POST(
   request: Request,
@@ -130,21 +131,42 @@ export async function POST(
       return updated;
     });
 
-    // Queue notification email to supplier about the assignment
+    // Queue notification email to supplier about the assignment using React Email template
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
+    const portalUrl = `${baseUrl}/supplier/bookings/${id}`;
+
+    const driverProfile = driverId
+      ? await prisma.driverProfile.findUnique({
+          where: { id: driverId },
+          select: { firstName: true, lastName: true },
+        })
+      : null;
+
+    const assignmentEmailHtml = await renderEmail({
+      type: "supplier-assignment",
+      props: {
+        supplierName: booking.organisation?.name ?? "Supplier",
+        bookingReference: booking.referenceNumber,
+        vehicleRegistration: vehicle.registrationNumber,
+        driverName: driverProfile ? `${driverProfile.firstName} ${driverProfile.lastName}` : undefined,
+        tripDetails: {
+          pickupLocation: booking.enquiry?.pickupLocation ?? "",
+          dropoffLocation: booking.enquiry?.dropoffLocation ?? "",
+          departureDate: booking.enquiry?.departureDate?.toLocaleDateString("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }) ?? "",
+        },
+        portalUrl,
+      },
+    });
+
     await emailQueue.add("send-email", {
       to: booking.organisation?.email,
       subject: `Booking ${booking.referenceNumber} – Vehicle & Driver Assigned`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1a1a1a;">Vehicle & Driver Assigned</h2>
-          <p>Dear ${booking.organisation?.name},</p>
-          <p>Vehicle <strong>${vehicle.registrationNumber}</strong> has been assigned to booking <strong>${booking.referenceNumber}</strong>.</p>
-          <p><strong>Trip:</strong> ${booking.enquiry?.pickupLocation} → ${booking.enquiry?.dropoffLocation}</p>
-          <p><strong>Date:</strong> ${booking.enquiry?.departureDate?.toLocaleDateString("en-GB")}</p>
-          <p>Please accept or reject this assignment in your supplier portal.</p>
-          <p>Kind regards,<br/>GroupBus</p>
-        </div>
-      `.trim(),
+      html: assignmentEmailHtml,
     });
 
     // Notify admin users about the assignment
