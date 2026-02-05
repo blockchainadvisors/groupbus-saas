@@ -40,11 +40,11 @@ const STAGE_COLORS = [
 
 const STAGE_LABELS = [
   { full: "Enquiries", short: "Enq" },
-  { full: "Sent to Suppliers", short: "Suppliers" },
-  { full: "Quotes Received", short: "Received" },
+  { full: "Sent to Suppliers", short: "Supp" },
+  { full: "Quotes Received", short: "Recv" },
   { full: "Sent to Customer", short: "Sent" },
-  { full: "Accepted", short: "Accepted" },
-  { full: "Confirmed", short: "Confirmed" },
+  { full: "Accepted", short: "Acc" },
+  { full: "Confirmed", short: "Conf" },
   { full: "Completed", short: "Done" },
 ];
 
@@ -78,37 +78,37 @@ export function PipelineFunnelChart({ data }: PipelineFunnelChartProps) {
 
   return (
     <Card className="overflow-hidden h-full">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base font-medium">Pipeline Funnel</CardTitle>
-            <CardDescription className="hidden sm:block">Conversion from enquiry to completion</CardDescription>
-            <CardDescription className="sm:hidden">This month</CardDescription>
+      <CardHeader className="pb-2 px-3 sm:px-6">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="text-sm sm:text-base font-medium">Pipeline Funnel</CardTitle>
+            <CardDescription className="hidden sm:block text-xs">Conversion from enquiry to completion</CardDescription>
+            <CardDescription className="sm:hidden text-[10px]">This month</CardDescription>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="text-right">
-              <p className="text-xs text-muted-foreground">Conversion</p>
-              <p className="text-lg font-bold text-emerald-600">{conversionRate}%</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Conv.</p>
+              <p className="text-base sm:text-lg font-bold text-emerald-600">{conversionRate}%</p>
             </div>
-            <div className="rounded-full bg-indigo-100 p-2 dark:bg-indigo-900/30">
-              <Filter className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <div className="rounded-full bg-indigo-100 p-1.5 sm:p-2 dark:bg-indigo-900/30">
+              <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600 dark:text-indigo-400" />
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0 pb-4">
+      <CardContent className="pt-0 pb-3 sm:pb-4 px-2 sm:px-6">
         {data.totalEnquiries === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
             No pipeline data this month.
           </p>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[220px] w-full">
+          <ChartContainer config={chartConfig} className="h-[200px] sm:h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={stages}
                 layout="vertical"
-                margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
-                barCategoryGap="20%"
+                margin={{ top: 0, right: 25, bottom: 0, left: 0 }}
+                barCategoryGap="15%"
               >
                 <XAxis type="number" domain={[0, maxValue]} hide />
                 <YAxis
@@ -116,21 +116,9 @@ export function PipelineFunnelChart({ data }: PipelineFunnelChartProps) {
                   type="category"
                   tickLine={false}
                   axisLine={false}
-                  width={70}
-                  tickMargin={4}
-                  tick={{ fontSize: 11 }}
-                  className="hidden sm:block"
-                />
-                <YAxis
-                  dataKey="stageShort"
-                  type="category"
-                  tickLine={false}
-                  axisLine={false}
-                  width={55}
+                  width={40}
                   tickMargin={2}
-                  tick={{ fontSize: 10 }}
-                  className="sm:hidden"
-                  yAxisId="mobile"
+                  tick={{ fontSize: 9 }}
                 />
                 <ChartTooltip
                   content={
@@ -143,14 +131,14 @@ export function PipelineFunnelChart({ data }: PipelineFunnelChartProps) {
                     />
                   }
                 />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={20} maxBarSize={28}>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16} maxBarSize={22}>
                   {stages.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} className="drop-shadow-sm" />
                   ))}
                   <LabelList
                     dataKey="value"
                     position="right"
-                    className="fill-foreground text-xs font-medium"
+                    className="fill-foreground text-[10px] sm:text-xs font-medium"
                     formatter={(value: number) => value}
                   />
                 </Bar>

@@ -260,7 +260,7 @@ export default async function DashboardPage() {
   const isAdmin = user.role === "SUPERADMIN" || user.role === "ADMIN";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
       <PageHeader
         title={`Welcome back, ${user.firstName}`}
         description="Here's an overview of your operations."
