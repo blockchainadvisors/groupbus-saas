@@ -14,7 +14,6 @@ interface SupplierAssignmentEmailProps {
   supplierName: string;
   bookingReference: string;
   vehicleRegistration: string;
-  driverName?: string;
   tripDetails: {
     pickupLocation: string;
     dropoffLocation: string;
@@ -22,16 +21,15 @@ interface SupplierAssignmentEmailProps {
     departureTime?: string;
     passengerCount?: number;
   };
-  portalUrl?: string;
+  responseUrl?: string;
 }
 
 export function SupplierAssignmentEmail({
   supplierName,
   bookingReference,
   vehicleRegistration,
-  driverName,
   tripDetails,
-  portalUrl,
+  responseUrl,
 }: SupplierAssignmentEmailProps) {
   return (
     <BaseLayout preview={`Booking ${bookingReference} - Vehicle assigned, please respond`}>
@@ -73,9 +71,6 @@ export function SupplierAssignmentEmail({
       {/* Assignment Details */}
       <DetailsTable title="&#128663; Assignment Details">
         <DetailRow icon="&#128653;" label="Vehicle" value={vehicleRegistration} />
-        {driverName && (
-          <DetailRow icon="&#128100;" label="Driver" value={driverName} />
-        )}
       </DetailsTable>
 
       {/* Trip Details */}
@@ -96,13 +91,13 @@ export function SupplierAssignmentEmail({
       <InfoBox variant="warning" icon="&#9888;">
         <strong>Action Required</strong>
         <br />
-        Please accept or reject this assignment in your supplier portal as soon as possible.
+        Please click the button below to accept or reject this assignment. When accepting, you will need to provide the driver&apos;s name and contact details.
       </InfoBox>
 
       {/* CTA */}
-      {portalUrl && (
-        <EmailButton href={portalUrl}>
-          View in Supplier Portal
+      {responseUrl && (
+        <EmailButton href={responseUrl}>
+          Respond to Assignment
         </EmailButton>
       )}
 

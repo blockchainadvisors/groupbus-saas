@@ -77,7 +77,7 @@ export async function POST(
     });
 
     // Build acceptance link
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const acceptanceLink = `${baseUrl}/quote/accept?token=${updatedQuote.acceptanceToken}`;
 
     // Queue email to customer using React Email template

@@ -108,7 +108,7 @@ async function handleSurveyTrigger() {
     "survey-trigger: Bookings completed yesterday",
   );
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   for (const booking of completedBookings) {
     const enquiry = await prisma.enquiry.findUnique({

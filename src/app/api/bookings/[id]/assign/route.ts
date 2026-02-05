@@ -132,15 +132,8 @@ export async function POST(
     });
 
     // Queue notification email to supplier about the assignment using React Email template
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
-    const portalUrl = `${baseUrl}/supplier/bookings/${id}`;
-
-    const driverProfile = driverId
-      ? await prisma.driverProfile.findUnique({
-          where: { id: driverId },
-          select: { firstName: true, lastName: true },
-        })
-      : null;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const responseUrl = `${baseUrl}/booking/${updatedBooking.supplierAccessToken}`;
 
     const assignmentEmailHtml = await renderEmail({
       type: "supplier-assignment",
@@ -148,7 +141,6 @@ export async function POST(
         supplierName: booking.organisation?.name ?? "Supplier",
         bookingReference: booking.referenceNumber,
         vehicleRegistration: vehicle.registrationNumber,
-        driverName: driverProfile ? `${driverProfile.firstName} ${driverProfile.lastName}` : undefined,
         tripDetails: {
           pickupLocation: booking.enquiry?.pickupLocation ?? "",
           dropoffLocation: booking.enquiry?.dropoffLocation ?? "",
@@ -159,7 +151,7 @@ export async function POST(
             year: "numeric",
           }) ?? "",
         },
-        portalUrl,
+        responseUrl,
       },
     });
 

@@ -108,7 +108,7 @@ export async function POST(
 
     if (adminUser?.email) {
       const actionLabel = action === "accept" ? "Accepted" : "Rejected";
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       const bookingUrl = `${baseUrl}/bookings/${id}`;
 
       const responseEmailHtml = await renderEmail({

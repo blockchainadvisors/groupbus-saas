@@ -455,6 +455,8 @@ model Booking {
   supplierAccessToken String        @unique @default(cuid())
   vehicleId           String?
   driverId            String?
+  driverName          String?       // Driver name provided by supplier at acceptance (used if no DriverProfile)
+  driverPhone         String?       // Driver phone provided by supplier at acceptance
   preTripData         Json?
   preTripSubmittedAt  DateTime?
   startedAt           DateTime?

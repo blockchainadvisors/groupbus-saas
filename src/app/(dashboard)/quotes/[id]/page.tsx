@@ -94,7 +94,7 @@ export default async function QuoteDetailPage({
 
   const isAdmin = ["SUPERADMIN", "ADMIN"].includes(user.role);
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const acceptanceLink = `${baseUrl}/quote/accept?token=${quote.acceptanceToken}`;
 
   return (

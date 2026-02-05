@@ -131,7 +131,7 @@ export async function PATCH(
     });
 
     // Send status-change emails
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.groupbus.co.uk";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (status === "COMPLETED") {
       const tripDetails = {

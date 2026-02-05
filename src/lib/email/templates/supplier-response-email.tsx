@@ -16,6 +16,8 @@ interface SupplierResponseEmailProps {
   bookingReference: string;
   action: "accepted" | "rejected";
   reason?: string;
+  driverName?: string;
+  driverPhone?: string;
   tripDetails: {
     pickupLocation: string;
     dropoffLocation: string;
@@ -29,6 +31,8 @@ export function SupplierResponseEmail({
   bookingReference,
   action,
   reason,
+  driverName,
+  driverPhone,
   tripDetails,
   bookingUrl,
 }: SupplierResponseEmailProps) {
@@ -89,6 +93,16 @@ export function SupplierResponseEmail({
       )}
 
       <Divider />
+
+      {/* Driver Details (when accepted) */}
+      {isAccepted && driverName && (
+        <DetailsTable title="&#128100; Driver Details">
+          <DetailRow icon="&#128100;" label="Driver Name" value={driverName} />
+          {driverPhone && (
+            <DetailRow icon="&#128222;" label="Driver Phone" value={driverPhone} />
+          )}
+        </DetailsTable>
+      )}
 
       {/* Trip Details */}
       <DetailsTable title="&#128205; Trip Details">
