@@ -291,24 +291,28 @@ export default async function DashboardPage() {
           value={enquiries}
           description="this month"
           icon={MessageSquare}
+          iconColor="blue"
         />
         <StatCard
           title="Active Quotes"
           value={activeQuotes}
           description="awaiting response"
           icon={FileText}
+          iconColor="amber"
         />
         <StatCard
           title="Bookings"
           value={bookings}
           description="this month"
           icon={CalendarCheck}
+          iconColor="green"
         />
         <StatCard
           title="Revenue"
           value={formatCurrency(revenue)}
           description="this month"
           icon={TrendingUp}
+          iconColor="purple"
         />
       </div>
 

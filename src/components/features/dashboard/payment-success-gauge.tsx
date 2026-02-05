@@ -1,58 +1,36 @@
 "use client";
 
-import { RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
-import {
-  ChartContainer,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-
-const chartConfig = {
-  rate: {
-    label: "Success Rate",
-    color: "var(--color-chart-2)",
-  },
-} satisfies ChartConfig;
+import { GaugeChart } from "@/components/ui/gauge-chart";
+import { CreditCard } from "lucide-react";
 
 interface PaymentSuccessGaugeProps {
   rate: number; // 0–100
 }
 
 export function PaymentSuccessGauge({ rate }: PaymentSuccessGaugeProps) {
-  const data = [{ name: "rate", value: rate, fill: "var(--color-rate)" }];
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Success Rate</CardTitle>
-        <CardDescription>Payment success percentage</CardDescription>
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-medium">Success Rate</CardTitle>
+            <CardDescription>Payment success percentage</CardDescription>
+          </div>
+          <div className="rounded-full bg-emerald-100 p-2 dark:bg-emerald-900/30">
+            <CreditCard className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="flex flex-col items-center">
-        <ChartContainer config={chartConfig} className="h-[140px] w-[200px]">
-          <RadialBarChart
-            innerRadius={60}
-            outerRadius={85}
-            data={data}
-            startAngle={180}
-            endAngle={0}
-            cx="50%"
-            cy="100%"
-          >
-            <PolarAngleAxis
-              type="number"
-              domain={[0, 100]}
-              angleAxisId={0}
-              tick={false}
-            />
-            <RadialBar
-              dataKey="value"
-              cornerRadius={6}
-              background
-              className="[&_.recharts-radial-bar-background-sector]:fill-muted"
-            />
-          </RadialBarChart>
-        </ChartContainer>
-        <p className="text-2xl font-bold -mt-4">{rate}%</p>
+      <CardContent className="flex items-center justify-center pb-6 pt-2">
+        <GaugeChart
+          value={rate}
+          label="success-rate"
+          size="md"
+          variant="success"
+          showTicks
+          animated
+        />
       </CardContent>
     </Card>
   );

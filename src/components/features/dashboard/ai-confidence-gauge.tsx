@@ -1,58 +1,36 @@
 "use client";
 
-import { RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
-import {
-  ChartContainer,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-
-const chartConfig = {
-  confidence: {
-    label: "Avg Confidence",
-    color: "var(--color-chart-1)",
-  },
-} satisfies ChartConfig;
+import { GaugeChart } from "@/components/ui/gauge-chart";
+import { Brain } from "lucide-react";
 
 interface AiConfidenceGaugeProps {
   avgConfidence: number; // 0–100
 }
 
 export function AiConfidenceGauge({ avgConfidence }: AiConfidenceGaugeProps) {
-  const data = [{ name: "confidence", value: avgConfidence, fill: "var(--color-confidence)" }];
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>AI Confidence</CardTitle>
-        <CardDescription>Average decision confidence</CardDescription>
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-medium">AI Confidence</CardTitle>
+            <CardDescription>Average decision confidence</CardDescription>
+          </div>
+          <div className="rounded-full bg-violet-100 p-2 dark:bg-violet-900/30">
+            <Brain className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="flex flex-col items-center">
-        <ChartContainer config={chartConfig} className="h-[140px] w-[200px]">
-          <RadialBarChart
-            innerRadius={60}
-            outerRadius={85}
-            data={data}
-            startAngle={180}
-            endAngle={0}
-            cx="50%"
-            cy="100%"
-          >
-            <PolarAngleAxis
-              type="number"
-              domain={[0, 100]}
-              angleAxisId={0}
-              tick={false}
-            />
-            <RadialBar
-              dataKey="value"
-              cornerRadius={6}
-              background
-              className="[&_.recharts-radial-bar-background-sector]:fill-muted"
-            />
-          </RadialBarChart>
-        </ChartContainer>
-        <p className="text-2xl font-bold -mt-4">{avgConfidence}%</p>
+      <CardContent className="flex items-center justify-center pb-6 pt-2">
+        <GaugeChart
+          value={avgConfidence}
+          label="ai-confidence"
+          size="md"
+          variant="gradient"
+          showTicks
+          animated
+        />
       </CardContent>
     </Card>
   );
