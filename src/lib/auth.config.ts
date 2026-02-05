@@ -1,49 +1,11 @@
 import type { NextAuthConfig } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 
+/**
+ * Edge-safe auth config — used by middleware.
+ * Does NOT include providers that depend on Node.js modules (bcrypt, prisma).
+ */
 export const authConfig: NextAuthConfig = {
-  providers: [
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email as string,
-            deletedAt: null,
-            isActive: true,
-          },
-        });
-
-        if (!user || !user.passwordHash) return null;
-
-        const isValid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash
-        );
-
-        if (!isValid) return null;
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
-          role: user.role,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          organisationId: user.organisationId ?? undefined,
-          image: user.image,
-        };
-      },
-    }),
-  ],
+  providers: [], // Providers are added in auth.ts (Node.js runtime only)
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -61,13 +23,16 @@ export const authConfig: NextAuthConfig = {
         session.user.role = token.role as string;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
-        session.user.organisationId = token.organisationId as string | undefined;
+        session.user.organisationId = token.organisationId as
+          | string
+          | undefined;
       }
       return session;
     },
     async authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isDashboard = nextUrl.pathname.startsWith("/dashboard") ||
+      const isDashboard =
+        nextUrl.pathname.startsWith("/dashboard") ||
         nextUrl.pathname.startsWith("/enquiries") ||
         nextUrl.pathname.startsWith("/quotes") ||
         nextUrl.pathname.startsWith("/bookings") ||
@@ -75,8 +40,12 @@ export const authConfig: NextAuthConfig = {
         nextUrl.pathname.startsWith("/users") ||
         nextUrl.pathname.startsWith("/settings") ||
         nextUrl.pathname.startsWith("/ai-decisions") ||
+        nextUrl.pathname.startsWith("/ai-costs") ||
+        nextUrl.pathname.startsWith("/audit") ||
+        nextUrl.pathname.startsWith("/surveys") ||
         nextUrl.pathname.startsWith("/human-review");
-      const isAuthPage = nextUrl.pathname.startsWith("/login") ||
+      const isAuthPage =
+        nextUrl.pathname.startsWith("/login") ||
         nextUrl.pathname.startsWith("/register") ||
         nextUrl.pathname.startsWith("/forgot-password");
 
