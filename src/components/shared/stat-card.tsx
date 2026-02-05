@@ -34,16 +34,16 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold tracking-tight">{value}</span>
+      <CardContent className="p-3 sm:p-4 lg:p-6">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 space-y-0.5 sm:space-y-1">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{title}</p>
+            <div className="flex items-baseline gap-1 sm:gap-2">
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight">{value}</span>
               {trend && (
                 <span
                   className={cn(
-                    "text-xs font-medium",
+                    "text-[10px] sm:text-xs font-medium",
                     trend.isPositive ? "text-emerald-600" : "text-red-600"
                   )}
                 >
@@ -53,11 +53,11 @@ export function StatCard({
               )}
             </div>
             {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{description}</p>
             )}
           </div>
-          <div className={cn("rounded-full p-2.5", iconColorClasses[iconColor])}>
-            <Icon className="h-5 w-5" />
+          <div className={cn("rounded-full p-1.5 sm:p-2 lg:p-2.5 shrink-0", iconColorClasses[iconColor])}>
+            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
           </div>
         </div>
       </CardContent>
