@@ -267,8 +267,8 @@ export default async function DashboardPage() {
       />
 
       {pendingReviews > 0 && (
-        <Link href="/human-review">
-          <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+        <Link href="/human-review" className="block">
+          <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <div>
               <p className="font-medium">
