@@ -191,7 +191,8 @@ function AiConfigRow({
       )}
 
       <p className="text-xs text-muted-foreground">
-        Last updated: {new Date(config.updatedAt).toLocaleString()}
+        Last updated:{" "}
+        {new Date(config.updatedAt).toLocaleString("en-GB")}
       </p>
     </div>
   );
