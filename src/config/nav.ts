@@ -11,6 +11,7 @@ import {
   ScrollText,
   DollarSign,
   ClipboardCheck,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 
@@ -87,6 +88,12 @@ export const dashboardNav: NavItem[] = [
     title: "Audit Log",
     href: "/audit",
     icon: ScrollText,
+    roles: ["SUPERADMIN", "ADMIN"],
+  },
+  {
+    title: "Email Preview",
+    href: "/email-preview",
+    icon: Mail,
     roles: ["SUPERADMIN", "ADMIN"],
   },
   {
