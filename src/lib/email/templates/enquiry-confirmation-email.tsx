@@ -24,12 +24,14 @@ interface EnquiryConfirmationEmailProps {
     tripType: string;
     specialRequirements?: string;
   };
+  dashboardUrl?: string; // Magic link URL for guest users to access dashboard
 }
 
 export function EnquiryConfirmationEmail({
   customerName,
   enquiryReference,
   tripDetails,
+  dashboardUrl,
 }: EnquiryConfirmationEmailProps) {
   return (
     <BaseLayout preview={`Enquiry ${enquiryReference} received - We're finding the best quotes for you!`}>
@@ -38,7 +40,7 @@ export function EnquiryConfirmationEmail({
         <table width="100%" cellPadding={0} cellSpacing={0}>
           <tr>
             <td style={styles.receivedBannerInner}>
-              <span style={styles.receivedIcon}>&#128172;</span>
+              <span style={styles.receivedIcon}>💬</span>
               <span style={styles.receivedText}>Enquiry Received!</span>
             </td>
           </tr>
@@ -130,10 +132,28 @@ export function EnquiryConfirmationEmail({
         If your trip is within 48 hours, please call us directly at <strong>0800 123 4567</strong> for immediate assistance.
       </InfoBox>
 
-      {/* CTA */}
-      <EmailButton href="https://groupbus.co.uk/track">
-        Track Your Enquiry Status
-      </EmailButton>
+      {/* Dashboard Access - for guest users with magic link */}
+      {dashboardUrl && (
+        <>
+          <InfoBox variant="success" icon="&#128273;">
+            <strong>Access Your Dashboard</strong>
+            <br />
+            View your enquiry status, receive quotes, and manage your bookings - all in one place.
+            This secure link is valid for 24 hours.
+          </InfoBox>
+          <EmailButton href={dashboardUrl} variant="success">
+            Access Your Dashboard
+          </EmailButton>
+          <Divider />
+        </>
+      )}
+
+      {/* CTA - fallback for logged-in users */}
+      {!dashboardUrl && (
+        <EmailButton href="https://groupbus.co.uk/dashboard">
+          View Your Dashboard
+        </EmailButton>
+      )}
 
       <Divider />
 
@@ -153,15 +173,15 @@ export function EnquiryConfirmationEmail({
         <table width="100%" cellPadding={0} cellSpacing={0}>
           <tr>
             <td style={styles.trustBadge}>
-              <span style={styles.trustIcon}>&#9733;</span>
+              <span style={styles.trustIcon}>★</span>
               <span style={styles.trustText}>4.9/5 Rating</span>
             </td>
             <td style={styles.trustBadge}>
-              <span style={styles.trustIcon}>&#128274;</span>
+              <span style={styles.trustIcon}>🔒</span>
               <span style={styles.trustText}>Secure Payments</span>
             </td>
             <td style={styles.trustBadge}>
-              <span style={styles.trustIcon}>&#128652;</span>
+              <span style={styles.trustIcon}>🚌</span>
               <span style={styles.trustText}>500+ Coaches</span>
             </td>
           </tr>

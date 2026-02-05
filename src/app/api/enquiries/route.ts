@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { aiPipelineQueue, emailQueue } from "@/lib/queue";
 import { enquirySchema } from "@/lib/validations/enquiry";
+import { renderEmail } from "@/lib/email/render";
+import { generateMagicLink } from "@/lib/magic-link";
+import { MagicLinkPurpose } from "@prisma/client";
 
 export async function POST(request: Request) {
   try {
@@ -90,24 +94,77 @@ export async function POST(request: Request) {
       },
     });
 
-    // Send confirmation email to customer
+    // Generate magic link for dashboard access (for guest users)
+    let dashboardUrl: string | undefined;
+    if (!session?.user?.id) {
+      // Get client info for security tracking
+      const headersList = await headers();
+      const ipAddress =
+        headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        headersList.get("x-real-ip") ||
+        undefined;
+      const userAgent = headersList.get("user-agent") || undefined;
+
+      const magicLinkResult = await generateMagicLink({
+        userId: customerId,
+        purpose: MagicLinkPurpose.ENQUIRY_ACCESS,
+        redirectTo: `/enquiries/${enquiry.id}`,
+        ipAddress,
+        userAgent,
+      });
+
+      if (magicLinkResult.success) {
+        dashboardUrl = magicLinkResult.url;
+      }
+    }
+
+    // Send confirmation email to customer using React Email template
+    const tripTypeFormatted = validated.tripType
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const specialRequirementsText =
+      validated.specialRequirements && validated.specialRequirements.length > 0
+        ? validated.specialRequirements.join(", ")
+        : undefined;
+
+    const emailHtml = await renderEmail({
+      type: "enquiry-confirmation",
+      props: {
+        customerName: validated.contactName,
+        enquiryReference: referenceNumber,
+        tripDetails: {
+          pickupLocation: validated.pickupLocation,
+          dropoffLocation: validated.dropoffLocation ?? "To be confirmed",
+          departureDate: new Date(validated.departureDate).toLocaleDateString("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }),
+          departureTime: validated.departureTime ?? undefined,
+          returnDate: validated.returnDate
+            ? new Date(validated.returnDate).toLocaleDateString("en-GB", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : undefined,
+          returnTime: validated.returnTime ?? undefined,
+          passengerCount: validated.passengerCount,
+          tripType: tripTypeFormatted,
+          specialRequirements: specialRequirementsText,
+        },
+        dashboardUrl,
+      },
+    });
+
     await emailQueue.add("send-email", {
       to: validated.contactEmail,
       subject: `Enquiry ${referenceNumber} – We've Received Your Request`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1a1a1a;">Enquiry Received</h2>
-          <p>Dear ${validated.contactName},</p>
-          <p>Thank you for your enquiry. We have received your request and it is now being processed.</p>
-          <p><strong>Reference:</strong> ${referenceNumber}</p>
-          <p><strong>From:</strong> ${validated.pickupLocation}<br/>
-             <strong>To:</strong> ${validated.dropoffLocation}<br/>
-             <strong>Date:</strong> ${new Date(validated.departureDate).toLocaleDateString("en-GB")}<br/>
-             <strong>Passengers:</strong> ${validated.passengerCount}</p>
-          <p>We will send you a quote shortly. If you have any questions in the meantime, please reply to this email quoting your reference number.</p>
-          <p>Kind regards,<br/>GroupBus</p>
-        </div>
-      `.trim(),
+      html: emailHtml,
     });
 
     // Queue the AI pipeline job for enquiry intake processing

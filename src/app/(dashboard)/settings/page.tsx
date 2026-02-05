@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ProfileForm } from "@/components/features/settings/profile-form";
 import { AiConfigSection } from "@/components/features/settings/ai-config-section";
 import { SystemSettingsSection } from "@/components/features/settings/system-settings-section";
+import { SecuritySettingsSection } from "@/components/features/settings/security-settings-section";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -34,6 +35,8 @@ export default async function SettingsPage({
       email: true,
       phone: true,
       role: true,
+      passwordHash: true,
+      mfaEnabled: true,
     },
   });
 
@@ -69,6 +72,7 @@ export default async function SettingsPage({
 
   const tabs = [
     { id: "profile", label: "Profile", visible: true },
+    { id: "security", label: "Security", visible: true },
     { id: "ai", label: "AI Configuration", visible: isAdmin },
     { id: "system", label: "System", visible: isSuperAdmin },
   ].filter((t) => t.visible);
@@ -116,6 +120,24 @@ export default async function SettingsPage({
                 email: profile.email,
                 phone: profile.phone,
               }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Security Tab */}
+      {activeTab === "security" && profile && (
+        <Card className="mx-auto max-w-2xl">
+          <CardHeader>
+            <CardTitle>Security Settings</CardTitle>
+            <CardDescription>
+              Manage your password and authentication methods.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SecuritySettingsSection
+              hasPassword={!!(profile.passwordHash && profile.passwordHash.length > 0)}
+              mfaEnabled={profile.mfaEnabled}
             />
           </CardContent>
         </Card>

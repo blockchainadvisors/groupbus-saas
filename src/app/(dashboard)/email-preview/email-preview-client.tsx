@@ -7,16 +7,43 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Monitor, Smartphone, RefreshCw, Mail, Code } from "lucide-react";
 
-type TemplateType = "quote" | "booking-confirmation" | "enquiry-confirmation";
+type TemplateType =
+  | "quote"
+  | "booking-confirmation"
+  | "enquiry-confirmation"
+  | "enquiry-confirmation-with-dashboard"
+  | "supplier-assignment"
+  | "supplier-response-accepted"
+  | "supplier-response-rejected"
+  | "trip-completion-customer"
+  | "trip-completion-supplier"
+  | "booking-cancellation-customer"
+  | "booking-cancellation-supplier"
+  | "magic-link-login"
+  | "magic-link-enquiry"
+  | "magic-link-supplier"
+  | "supplier-invite";
 
 const TEMPLATE_OPTIONS: { value: TemplateType; label: string; description: string }[] = [
+  { value: "enquiry-confirmation", label: "Enquiry Confirmation", description: "Sent when enquiry received" },
+  { value: "enquiry-confirmation-with-dashboard", label: "Enquiry + Dashboard Link", description: "Enquiry with magic link" },
   { value: "quote", label: "Quote Email", description: "Sent to customers with pricing" },
   { value: "booking-confirmation", label: "Booking Confirmation", description: "Sent after payment" },
-  { value: "enquiry-confirmation", label: "Enquiry Confirmation", description: "Sent when enquiry received" },
+  { value: "supplier-assignment", label: "Supplier Assignment", description: "Sent when vehicle assigned" },
+  { value: "supplier-response-accepted", label: "Supplier Accepted", description: "Admin notification of acceptance" },
+  { value: "supplier-response-rejected", label: "Supplier Rejected", description: "Admin notification of rejection" },
+  { value: "trip-completion-customer", label: "Trip Complete (Customer)", description: "Sent to customer after trip" },
+  { value: "trip-completion-supplier", label: "Trip Complete (Supplier)", description: "Sent to supplier after trip" },
+  { value: "booking-cancellation-customer", label: "Cancellation (Customer)", description: "Sent when booking cancelled" },
+  { value: "booking-cancellation-supplier", label: "Cancellation (Supplier)", description: "Supplier cancellation notice" },
+  { value: "magic-link-login", label: "Magic Link (Login)", description: "Sign-in magic link email" },
+  { value: "magic-link-enquiry", label: "Magic Link (Enquiry)", description: "Dashboard access for guests" },
+  { value: "magic-link-supplier", label: "Magic Link (Supplier)", description: "Supplier onboarding link" },
+  { value: "supplier-invite", label: "Supplier Invite", description: "Welcome email for new suppliers" },
 ];
 
 export function EmailPreviewClient() {
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>("quote");
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>("enquiry-confirmation");
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);

@@ -47,7 +47,8 @@ export const authConfig: NextAuthConfig = {
       const isAuthPage =
         nextUrl.pathname.startsWith("/login") ||
         nextUrl.pathname.startsWith("/register") ||
-        nextUrl.pathname.startsWith("/forgot-password");
+        nextUrl.pathname.startsWith("/forgot-password") ||
+        nextUrl.pathname.startsWith("/magic-link-sent");
 
       if (isDashboard) {
         if (!isLoggedIn) return Response.redirect(new URL("/login", nextUrl));

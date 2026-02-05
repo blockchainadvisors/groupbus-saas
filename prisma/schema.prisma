@@ -159,6 +159,12 @@ enum EnquirySource {
   API
 }
 
+enum MagicLinkPurpose {
+  LOGIN
+  ENQUIRY_ACCESS
+  SUPPLIER_ONBOARDING
+}
+
 // ============================================================================
 // Models
 // ============================================================================
@@ -178,12 +184,15 @@ model User {
   image           String?
   organisationId  String?
   deletedAt       DateTime?
+  mfaEnabled      Boolean   @default(false)
+  mfaSecret       String?   // For future TOTP
 
   organisation    Organisation?    @relation(fields: [organisationId], references: [id])
   enquiries       Enquiry[]
   notifications   Notification[]
   auditLogs       AuditLog[]
   surveyResponses SurveyResponse[]
+  magicLinkTokens MagicLinkToken[]
 
   @@index([email])
   @@index([role])
@@ -757,4 +766,22 @@ model InboundEmail {
 
   @@index([processed, createdAt])
   @@index([fromEmail])
+}
+
+model MagicLinkToken {
+  id           String           @id @default(cuid())
+  createdAt    DateTime         @default(now())
+  userId       String
+  tokenHash    String           @unique  // SHA-256 hash, not plaintext
+  expiresAt    DateTime
+  usedAt       DateTime?
+  ipAddress    String?
+  userAgent    String?
+  purpose      MagicLinkPurpose @default(LOGIN)
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId, createdAt])
+  @@index([expiresAt])
 }
