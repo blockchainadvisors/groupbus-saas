@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, XAxis, YAxis, Cell, LabelList } from "recharts";
+import { Bar, BarChart, XAxis, YAxis, Cell, LabelList, ResponsiveContainer } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -38,21 +38,35 @@ const STAGE_COLORS = [
   "#059669", // dark emerald - Completed
 ];
 
+const STAGE_LABELS = [
+  { full: "Enquiries", short: "Enq" },
+  { full: "Sent to Suppliers", short: "Suppliers" },
+  { full: "Quotes Received", short: "Received" },
+  { full: "Sent to Customer", short: "Sent" },
+  { full: "Accepted", short: "Accepted" },
+  { full: "Confirmed", short: "Confirmed" },
+  { full: "Completed", short: "Done" },
+];
+
 export function PipelineFunnelChart({ data }: PipelineFunnelChartProps) {
-  const stages = [
-    { stage: "Enquiries", value: data.totalEnquiries },
-    { stage: "Sent to Suppliers", value: data.sentToSuppliers },
-    { stage: "Quotes Received", value: data.quotesReceived },
-    { stage: "Sent to Customer", value: data.quoteSentToCustomer },
-    { stage: "Accepted", value: data.acceptedQuotes },
-    { stage: "Confirmed", value: data.confirmedBookings },
-    { stage: "Completed", value: data.completedBookings },
-  ].map((item, i) => ({
-    ...item,
+  const stageValues = [
+    data.totalEnquiries,
+    data.sentToSuppliers,
+    data.quotesReceived,
+    data.quoteSentToCustomer,
+    data.acceptedQuotes,
+    data.confirmedBookings,
+    data.completedBookings,
+  ];
+
+  const stages = STAGE_LABELS.map((label, i) => ({
+    stage: label.full,
+    stageShort: label.short,
+    value: stageValues[i],
     fill: STAGE_COLORS[i],
     rate:
       data.totalEnquiries > 0
-        ? Math.round((item.value / data.totalEnquiries) * 100)
+        ? Math.round((stageValues[i] / data.totalEnquiries) * 100)
         : 0,
   }));
 
@@ -60,13 +74,16 @@ export function PipelineFunnelChart({ data }: PipelineFunnelChartProps) {
     ? Math.round((data.completedBookings / data.totalEnquiries) * 100)
     : 0;
 
+  const maxValue = Math.max(...stageValues, 1);
+
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden h-full">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-base font-medium">Pipeline Funnel (This Month)</CardTitle>
-            <CardDescription>Conversion from enquiry to completion</CardDescription>
+            <CardTitle className="text-base font-medium">Pipeline Funnel</CardTitle>
+            <CardDescription className="hidden sm:block">Conversion from enquiry to completion</CardDescription>
+            <CardDescription className="sm:hidden">This month</CardDescription>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
@@ -79,51 +96,66 @@ export function PipelineFunnelChart({ data }: PipelineFunnelChartProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 pb-4">
         {data.totalEnquiries === 0 ? (
-          <p className="text-sm text-muted-foreground py-12 text-center">
+          <p className="text-sm text-muted-foreground py-8 text-center">
             No pipeline data this month.
           </p>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[240px] w-full">
-            <BarChart
-              data={stages}
-              layout="vertical"
-              margin={{ top: 0, right: 50, bottom: 0, left: 0 }}
-            >
-              <YAxis
-                dataKey="stage"
-                type="category"
-                tickLine={false}
-                axisLine={false}
-                width={115}
-                tickMargin={4}
-                tick={{ fontSize: 12 }}
-              />
-              <XAxis type="number" hide />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value, _name, item) => (
-                      <span>
-                        {value} ({item.payload.rate}% of enquiries)
-                      </span>
-                    )}
-                  />
-                }
-              />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={24}>
-                {stages.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} className="drop-shadow-sm" />
-                ))}
-                <LabelList
-                  dataKey="value"
-                  position="right"
-                  className="fill-foreground text-xs font-medium"
-                  formatter={(value: number) => value}
+          <ChartContainer config={chartConfig} className="h-[220px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={stages}
+                layout="vertical"
+                margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
+                barCategoryGap="20%"
+              >
+                <XAxis type="number" domain={[0, maxValue]} hide />
+                <YAxis
+                  dataKey="stageShort"
+                  type="category"
+                  tickLine={false}
+                  axisLine={false}
+                  width={70}
+                  tickMargin={4}
+                  tick={{ fontSize: 11 }}
+                  className="hidden sm:block"
                 />
-              </Bar>
-            </BarChart>
+                <YAxis
+                  dataKey="stageShort"
+                  type="category"
+                  tickLine={false}
+                  axisLine={false}
+                  width={55}
+                  tickMargin={2}
+                  tick={{ fontSize: 10 }}
+                  className="sm:hidden"
+                  yAxisId="mobile"
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value, _name, item) => (
+                        <span>
+                          {item.payload.stage}: {value} ({item.payload.rate}%)
+                        </span>
+                      )}
+                    />
+                  }
+                />
+                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={20} maxBarSize={28}>
+                  {stages.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} className="drop-shadow-sm" />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    className="fill-foreground text-xs font-medium"
+                    formatter={(value: number) => value}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </ChartContainer>
         )}
       </CardContent>

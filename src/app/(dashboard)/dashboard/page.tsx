@@ -318,35 +318,39 @@ export default async function DashboardPage() {
 
       {isAdmin && (
         <>
-          {/* Row 2: Gauges */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <PaymentSuccessGauge rate={paymentSuccessRate} />
-            <AiConfidenceGauge avgConfidence={avgAiConfidence} />
-          </div>
-
-          {/* Row 3: Enquiry Trend + Status Pie */}
+          {/* Row 2: Enquiry Trend + Gauges */}
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <EnquiryTrendChart data={enquiryTrendData} />
             </div>
-            <EnquiryStatusChart data={enquiryStatusData} />
+            <div className="grid gap-4 grid-cols-2 lg:grid-cols-1">
+              <PaymentSuccessGauge rate={paymentSuccessRate} />
+              <AiConfidenceGauge avgConfidence={avgAiConfidence} />
+            </div>
           </div>
 
-          {/* Row 4: Pipeline Funnel */}
-          <PipelineFunnelChart
-            data={{
-              totalEnquiries,
-              sentToSuppliers,
-              quotesReceived,
-              quoteSentToCustomer,
-              acceptedQuotes,
-              confirmedBookings,
-              completedBookings,
-            }}
-          />
+          {/* Row 3: Pipeline Funnel + Enquiry Status */}
+          <div className="grid gap-4 lg:grid-cols-5">
+            <div className="lg:col-span-3">
+              <PipelineFunnelChart
+                data={{
+                  totalEnquiries,
+                  sentToSuppliers,
+                  quotesReceived,
+                  quoteSentToCustomer,
+                  acceptedQuotes,
+                  confirmedBookings,
+                  completedBookings,
+                }}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <EnquiryStatusChart data={enquiryStatusData} />
+            </div>
+          </div>
 
-          {/* Row 5: Payments + AI Distribution */}
-          <div className="grid gap-4 md:grid-cols-2">
+          {/* Row 4: Payments + AI Distribution */}
+          <div className="grid gap-4 sm:grid-cols-2">
             <PaymentDonutChart
               succeeded={succeededPayments}
               pending={pendingPayments}
@@ -355,8 +359,8 @@ export default async function DashboardPage() {
             <AiDistributionChart data={aiDistributionData} />
           </div>
 
-          {/* Row 6: Recent Enquiries + AI Activity Tables */}
-          <div className="grid gap-4 md:grid-cols-2">
+          {/* Row 5: Recent Enquiries + AI Activity Tables */}
+          <div className="grid gap-4 lg:grid-cols-2">
             <RecentEnquiriesTable data={serialisedEnquiries} />
             <AiActivityTable data={serialisedAiActivity} />
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { GaugeChart } from "@/components/ui/gauge-chart";
 import { Brain } from "lucide-react";
 
@@ -11,26 +11,26 @@ interface AiConfidenceGaugeProps {
 export function AiConfidenceGauge({ avgConfidence }: AiConfidenceGaugeProps) {
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base font-medium">AI Confidence</CardTitle>
-            <CardDescription>Average decision confidence</CardDescription>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="rounded-full bg-violet-100 p-1.5 dark:bg-violet-900/30">
+            <Brain className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
           </div>
-          <div className="rounded-full bg-violet-100 p-2 dark:bg-violet-900/30">
-            <Brain className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+          <div>
+            <p className="text-sm font-medium">AI Confidence</p>
+            <p className="text-xs text-muted-foreground">Avg decision score</p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="flex items-center justify-center pb-6 pt-2">
-        <GaugeChart
-          value={avgConfidence}
-          label="ai-confidence"
-          size="md"
-          variant="gradient"
-          showTicks
-          animated
-        />
+        <div className="flex justify-center">
+          <GaugeChart
+            value={avgConfidence}
+            label="ai-confidence"
+            size="sm"
+            variant="gradient"
+            showTicks
+            animated
+          />
+        </div>
       </CardContent>
     </Card>
   );

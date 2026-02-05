@@ -26,7 +26,7 @@ export function EnquiryTrendChart({ data }: EnquiryTrendChartProps) {
   const avgPerDay = data.length > 0 ? Math.round(totalEnquiries / data.length * 10) / 10 : 0;
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden h-full">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
@@ -44,13 +44,13 @@ export function EnquiryTrendChart({ data }: EnquiryTrendChartProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 pb-4">
         {data.length === 0 ? (
           <p className="text-sm text-muted-foreground py-12 text-center">
             No enquiry data yet.
           </p>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[200px] w-full">
+          <ChartContainer config={chartConfig} className="h-[180px] w-full">
             <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="fillEnquiries" x1="0" y1="0" x2="0" y2="1">

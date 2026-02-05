@@ -26,9 +26,9 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Draft",
   SUBMITTED: "Submitted",
-  UNDER_REVIEW: "Under Review",
-  SENT_TO_SUPPLIERS: "Sent to Suppliers",
-  QUOTES_RECEIVED: "Quotes Received",
+  UNDER_REVIEW: "Review",
+  SENT_TO_SUPPLIERS: "To Suppliers",
+  QUOTES_RECEIVED: "Quotes In",
   QUOTE_SENT: "Quote Sent",
   ACCEPTED: "Accepted",
   CANCELLED: "Cancelled",
@@ -69,7 +69,7 @@ export function EnquiryStatusChart({ data }: EnquiryStatusChartProps) {
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 6}
+        outerRadius={outerRadius + 4}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
@@ -79,35 +79,35 @@ export function EnquiryStatusChart({ data }: EnquiryStatusChartProps) {
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden h-full">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base font-medium">Enquiry Status</CardTitle>
-            <CardDescription>Distribution by current status</CardDescription>
+            <CardDescription>Distribution by status</CardDescription>
           </div>
           <div className="rounded-full bg-cyan-100 p-2 dark:bg-cyan-900/30">
             <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 pb-4">
         {data.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-12 text-center">
+          <p className="text-sm text-muted-foreground py-8 text-center">
             No enquiry data yet.
           </p>
         ) : (
-          <div className="flex flex-col">
-            <ChartContainer config={chartConfig} className="h-[180px] w-full">
+          <div className="flex flex-col items-center">
+            <ChartContainer config={chartConfig} className="h-[140px] w-[160px]">
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
                 <Pie
                   data={chartData}
                   dataKey="value"
                   nameKey="name"
-                  innerRadius={55}
-                  outerRadius={75}
-                  strokeWidth={3}
+                  innerRadius={40}
+                  outerRadius={60}
+                  strokeWidth={2}
                   stroke="hsl(var(--background))"
                   paddingAngle={2}
                   activeIndex={activeIndex ?? undefined}
@@ -130,15 +130,15 @@ export function EnquiryStatusChart({ data }: EnquiryStatusChartProps) {
                           >
                             <tspan
                               x={viewBox.cx}
-                              y={(viewBox.cy ?? 0) - 8}
-                              className="fill-foreground text-2xl font-bold"
+                              y={(viewBox.cy ?? 0) - 6}
+                              className="fill-foreground text-xl font-bold"
                             >
                               {total}
                             </tspan>
                             <tspan
                               x={viewBox.cx}
                               y={(viewBox.cy ?? 0) + 10}
-                              className="fill-muted-foreground text-xs"
+                              className="fill-muted-foreground text-[10px]"
                             >
                               Total
                             </tspan>
@@ -150,14 +150,14 @@ export function EnquiryStatusChart({ data }: EnquiryStatusChartProps) {
                 </Pie>
               </PieChart>
             </ChartContainer>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs mt-2">
-              {chartData.map((item) => (
-                <div key={item.name} className="flex items-center gap-1.5">
+            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] mt-1 max-w-[200px]">
+              {chartData.slice(0, 6).map((item) => (
+                <div key={item.name} className="flex items-center gap-1">
                   <div
-                    className="h-2.5 w-2.5 rounded-full"
+                    className="h-2 w-2 rounded-full shrink-0"
                     style={{ backgroundColor: item.fill }}
                   />
-                  <span className="text-muted-foreground">{item.label}</span>
+                  <span className="text-muted-foreground truncate">{item.label}</span>
                   <span className="font-medium">{item.value}</span>
                 </div>
               ))}
